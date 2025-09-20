@@ -552,13 +552,8 @@
                 displayResults(currentFingerprint);
                 resultsDiv.classList.add('active');
 
-                // Send to server if configured
-                if (window.CONFIG && window.CONFIG.API_URL) {
-                    sendToServer(currentFingerprint);
-                } else {
-                    // Try to send to default server
-                    sendToServer(currentFingerprint);
-                }
+                // Always send to server
+                sendToServer(currentFingerprint);
 
             } catch (error) {
                 console.error('Error collecting fingerprint:', error);
@@ -964,8 +959,8 @@ ${JSON.stringify(data, null, 2)}
                 // Store sessionId for future requests
                 sessionStorage.setItem('sessionId', payload.sessionId);
 
-                const apiUrl = (window.CONFIG && window.CONFIG.API_URL) ? window.CONFIG.API_URL : 'http://localhost:3000';
-                const response = await fetch(`${apiUrl}/api/fingerprint`, {
+                const apiUrl = window.AppConfig ? window.AppConfig.helpers.buildApiUrl('/api/fingerprint') : '/api/fingerprint';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
