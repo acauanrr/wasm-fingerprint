@@ -4,10 +4,13 @@
   "main": "index.js",
   "scripts": {
     "build:wasm": "cd wasm-fingerprint && export PATH=\"$HOME/.cargo/bin:$PATH\" && wasm-pack build --target web --out-dir ../public/pkg --no-opt",
+    "build:wasm:heroku": "echo 'Skipping WASM build on Heroku - using pre-built files'",
     "build": "npm run build:wasm",
+    "heroku-postbuild": "npm run build:wasm:heroku",
     "start": "node server.js",
     "dev": "npm run build && npm start",
-    "clean": "rm -rf public/pkg database/fingerprints.db data/fingerprints.log"
+    "clean": "rm -rf public/pkg database/fingerprints.db data/fingerprints.log",
+    "prebuild": "mkdir -p public/pkg"
   },
   "keywords": [],
   "author": "",
@@ -19,5 +22,9 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "sqlite3": "^5.1.7"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

@@ -1,0 +1,37 @@
+{
+  "name": "WASM Fingerprint",
+  "description": "Advanced browser fingerprinting system using WebAssembly",
+  "repository": "https://github.com/acauanrr/wasm-fingerprint",
+  "logo": "",
+  "keywords": ["node", "express", "wasm", "fingerprinting", "rust"],
+  "buildpacks": [
+    {
+      "url": "https://github.com/emk/heroku-buildpack-rust"
+    },
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment mode",
+      "value": "production"
+    },
+    "ENABLE_CANVAS": {
+      "description": "Enable canvas fingerprinting",
+      "value": "true"
+    },
+    "ENABLE_WEBGL": {
+      "description": "Enable WebGL fingerprinting",
+      "value": "true"
+    },
+    "ENABLE_AUDIO": {
+      "description": "Enable audio fingerprinting",
+      "value": "true"
+    },
+    "ENABLE_HARDWARE_BENCHMARKS": {
+      "description": "Enable hardware benchmarks",
+      "value": "true"
+    }
+  }
+}

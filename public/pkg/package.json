@@ -1,0 +1,24 @@
+{
+  "name": "wasm-fingerprint",
+  "type": "module",
+  "collaborators": [
+    "Research Team"
+  ],
+  "description": "Advanced browser fingerprinting using WebAssembly",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/wasm-fingerprint"
+  },
+  "files": [
+    "wasm_fingerprint_bg.wasm",
+    "wasm_fingerprint.js",
+    "wasm_fingerprint.d.ts"
+  ],
+  "main": "wasm_fingerprint.js",
+  "types": "wasm_fingerprint.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
