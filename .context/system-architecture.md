@@ -108,11 +108,11 @@ graph TB
     WASM_PACK --> PKG
     PKG --> WASM
 
-    %% Styling
-    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef storage fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef build fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    %% Styling - Optimized for both light and dark modes
+    classDef frontend fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    classDef backend fill:#7b68ee,stroke:#5a4bc4,stroke-width:2px,color:#fff
+    classDef storage fill:#50c878,stroke:#3a9b5c,stroke-width:2px,color:#fff
+    classDef build fill:#ff8c42,stroke:#cc6a2a,stroke-width:2px,color:#fff
 
     class UI,WASM,JS,FP_ENGINES frontend
     class SERVER,CONFIG,DB_LAYER,API_ENDPOINTS backend
@@ -247,11 +247,11 @@ flowchart TD
     VALIDATE -->|❌ Erro| ERROR[⚠️ Retorna erro 400]
     STORE_SQLITE -->|❌ Falha DB| FALLBACK[🔄 Apenas arquivo]
 
-    %% Styling
-    classDef process fill:#bbdefb,stroke:#1976d2
-    classDef storage fill:#c8e6c9,stroke:#388e3c
-    classDef error fill:#ffcdd2,stroke:#d32f2f
-    classDef decision fill:#fff9c4,stroke:#f57f17
+    %% Styling - Optimized for both light and dark modes
+    classDef process fill:#5e92f3,stroke:#3d6bb3,stroke-width:2px,color:#fff
+    classDef storage fill:#66bb6a,stroke:#4a8f4e,stroke-width:2px,color:#fff
+    classDef error fill:#ef5350,stroke:#c62828,stroke-width:2px,color:#fff
+    classDef decision fill:#ffa726,stroke:#f57c00,stroke-width:2px,color:#fff
 
     class CANVAS,WEBGL,AUDIO,BROWSER,HARDWARE process
     class STORE_SQLITE,STORE_FILE,DB_MAIN,DB_BROWSER,DB_CANVAS,DB_WEBGL,DB_AUDIO,DB_HARDWARE,DB_BENCH,DB_META storage
@@ -447,10 +447,10 @@ flowchart TD
     SIMILAR --> RESPONSE
     DIFFERENT --> RESPONSE
 
-    classDef exact fill:#e3f2fd,stroke:#1976d2
-    classDef tolerance fill:#fff3e0,stroke:#f57c00
-    classDef result fill:#e8f5e9,stroke:#388e3c
-    classDef decision fill:#fce4ec,stroke:#c2185b
+    classDef exact fill:#42a5f5,stroke:#1976d2,stroke-width:2px,color:#fff
+    classDef tolerance fill:#ffa726,stroke:#f57c00,stroke-width:2px,color:#fff
+    classDef result fill:#66bb6a,stroke:#388e3c,stroke-width:2px,color:#fff
+    classDef decision fill:#ec407a,stroke:#c2185b,stroke-width:2px,color:#fff
 
     class CANVAS_CMP,WEBGL_CMP,AUDIO_CMP,BROWSER_CMP exact
     class HARDWARE_CMP,THRESHOLD,MATH_TOL,MEMORY_TOL,CRYPTO_TOL,CPU_TOL tolerance
@@ -518,10 +518,10 @@ flowchart LR
         HEALTH --> LIVE[✅ App Live]
     end
 
-    classDef dev fill:#e1f5fe,stroke:#01579b
-    classDef git fill:#f3e5f5,stroke:#4a148c
-    classDef heroku fill:#fff3e0,stroke:#e65100
-    classDef prod fill:#e8f5e9,stroke:#2e7d32
+    classDef dev fill:#4fc3f7,stroke:#0277bd,stroke-width:2px,color:#fff
+    classDef git fill:#9575cd,stroke:#512da8,stroke-width:2px,color:#fff
+    classDef heroku fill:#ff7043,stroke:#d84315,stroke-width:2px,color:#fff
+    classDef prod fill:#81c784,stroke:#2e7d32,stroke-width:2px,color:#fff
 
     class DEV,BUILD,TEST dev
     class GIT,PUSH git
