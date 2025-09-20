@@ -810,7 +810,7 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                 const response = await fetch('/api/stats');
                 const stats = await response.json();
 
-                document.getElementById('stats').innerHTML = \`
+                document.getElementById('stats').innerHTML = `
                     <div class="stat">
                         <span class="stat-label">Total Sessions</span>
                         <span class="stat-value">\${stats.totalSessions || 0}</span>
@@ -831,7 +831,7 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                         <span class="stat-label">Returning Users</span>
                         <span class="stat-value">\${stats.returningUsers || 0}</span>
                     </div>
-                \`;
+                `;
             } catch (error) {
                 document.getElementById('stats').innerHTML = '<div class="error">Failed to load statistics</div>';
             }
@@ -844,12 +844,12 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                 const data = await response.json();
 
                 if (data.success) {
-                    const recordsHtml = data.records.map(record => \`
+                    const recordsHtml = data.records.map(record => `
                         <div class="stat">
                             <span class="stat-label">\${new Date(record.server_timestamp).toLocaleString()}</span>
                             <span class="stat-value">\${record.fingerprint_hash?.substring(0, 16)}...</span>
                         </div>
-                    \`).join('');
+                    `).join('');
 
                     document.getElementById('records').innerHTML = recordsHtml || '<div class="error">No records found</div>';
                 } else {
@@ -879,12 +879,12 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                 const data = await response.json();
 
                 if (data.success) {
-                    resultsDiv.innerHTML = \`
-                        <div class="success">Query executed successfully. Found \${data.count} results.</div>
+                    resultsDiv.innerHTML = `
+                        <div class="success">Query executed successfully. Found ${data.count} results.</div>
                         <div class="results">
                             <pre>\${JSON.stringify(data.results, null, 2)}</pre>
                         </div>
-                    \`;
+                    `;
                 } else {
                     throw new Error(data.error);
                 }
@@ -894,7 +894,7 @@ app.get('/admin', authenticateAdmin, (req, res) => {
         }
 
         async function resetDatabase() {
-            const confirmMessage = \`⚠️ WARNING: Database Reset\n\nThis action will permanently delete:\n• All collected fingerprints\n• All session data\n• All log files\n\nAre you absolutely sure you want to reset the database?\n\nType 'RESET' to confirm:\`;
+            const confirmMessage = '⚠️ WARNING: Database Reset\\n\\nThis action will permanently delete:\\n• All collected fingerprints\\n• All session data\\n• All log files\\n\\nAre you absolutely sure you want to reset the database?\\n\\nType \\'RESET\\' to confirm:';
 
             const userInput = prompt(confirmMessage);
 
