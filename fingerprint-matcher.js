@@ -110,40 +110,41 @@ class FingerprintMatcher {
 
     /**
      * Compare browser information
+     * Note: Different browsers on same device should still match on hardware-related features
      */
     compareBrowserInfo(browser1, browser2) {
         let matches = 0;
         let total = 0;
 
-        // User agent family (Chrome, Firefox, Safari) - CRITICAL for browser identification
+        // User agent family - reduced weight for cross-browser matching
         const ua1Family = this.getUserAgentFamily(browser1.user_agent);
         const ua2Family = this.getUserAgentFamily(browser2.user_agent);
-        if (ua1Family === ua2Family) matches += 4; // Much higher weight for browser type
-        total += 4;
+        if (ua1Family === ua2Family) matches += 0.5; // Reduced weight
+        total += 0.5;
 
-        // Platform
-        if (browser1.platform === browser2.platform) matches++;
-        total++;
+        // Platform - highly important (same OS)
+        if (browser1.platform === browser2.platform) matches += 2;
+        total += 2;
 
-        // Language
+        // Language - somewhat stable per user
         if (browser1.language === browser2.language) matches++;
         total++;
 
-        // Screen resolution
-        if (browser1.screen_resolution === browser2.screen_resolution) matches++;
-        total++;
+        // Screen resolution - very stable per device
+        if (browser1.screen_resolution === browser2.screen_resolution) matches += 2;
+        total += 2;
 
-        // Color depth
+        // Color depth - stable per device
         if (browser1.color_depth === browser2.color_depth) matches++;
         total++;
 
-        // Timezone
+        // Timezone - stable per location
         if (browser1.timezone_offset === browser2.timezone_offset) matches++;
         total++;
 
-        // Hardware concurrency
-        if (browser1.hardware_concurrency === browser2.hardware_concurrency) matches++;
-        total++;
+        // Hardware concurrency - very stable per device
+        if (browser1.hardware_concurrency === browser2.hardware_concurrency) matches += 2;
+        total += 2;
 
         return total > 0 ? matches / total : 0;
     }
