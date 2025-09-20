@@ -111,28 +111,41 @@ async function readLogs() {
 async function calculateStats() {
     const logs = await readLogs();
 
-    const uniqueFingerprints = new Set();
-    const sessions = {};
+    // Track unique sessions (unique users/devices)
+    const uniqueSessions = new Set();
+    const sessionOccurrences = {};
+    const fingerprintHashes = new Set();
 
     logs.forEach(entry => {
-        if (entry.data && entry.data.fingerprint_hash) {
-            uniqueFingerprints.add(entry.data.fingerprint_hash);
+        // Count unique sessions (users)
+        if (entry.sessionId) {
+            uniqueSessions.add(entry.sessionId);
 
-            if (!sessions[entry.data.fingerprint_hash]) {
-                sessions[entry.data.fingerprint_hash] = [];
+            // Count how many times each session appears
+            if (!sessionOccurrences[entry.sessionId]) {
+                sessionOccurrences[entry.sessionId] = 0;
             }
-            sessions[entry.data.fingerprint_hash].push(entry.sessionId);
+            sessionOccurrences[entry.sessionId]++;
+        }
+
+        // Also track unique fingerprint hashes for comparison
+        if (entry.data && entry.data.fingerprint_hash) {
+            fingerprintHashes.add(entry.data.fingerprint_hash);
         }
     });
 
-    const returningUsers = Object.keys(sessions).filter(fp => sessions[fp].length > 1).length;
-    const totalSessions = logs.length;
-    const averageSessions = totalSessions > 0 ? (totalSessions / uniqueFingerprints.size).toFixed(2) : 0;
+    // Users who have submitted multiple fingerprints (returning users)
+    const returningUsers = Object.keys(sessionOccurrences)
+        .filter(sessionId => sessionOccurrences[sessionId] > 1).length;
+
+    const totalUniqueUsers = uniqueSessions.size;
+    const totalFingerprints = logs.length;
+    const averageSessions = totalUniqueUsers > 0 ? (totalFingerprints / totalUniqueUsers).toFixed(2) : 0;
 
     return {
-        totalFingerprints: logs.length,
-        uniqueFingerprints: uniqueFingerprints.size,
-        totalSessions: totalSessions,
+        totalFingerprints: totalFingerprints,
+        uniqueFingerprints: totalUniqueUsers, // Changed: now represents unique users/sessions
+        totalSessions: totalUniqueUsers,
         returningUsers: returningUsers,
         averageSessionsPerFingerprint: averageSessions,
         recentActivity: logs.filter(entry => {
