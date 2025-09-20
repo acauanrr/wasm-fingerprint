@@ -494,13 +494,13 @@
 
         <div id="results" class="results-container">
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('overview')">📊 Overview</button>
-                <button class="tab" onclick="switchTab('browser')">🌐 Browser</button>
-                <button class="tab" onclick="switchTab('canvas')">🎨 Canvas</button>
-                <button class="tab" onclick="switchTab('webgl')">🎮 WebGL</button>
-                <button class="tab" onclick="switchTab('audio')">🔊 Audio</button>
-                <button class="tab" onclick="switchTab('hardware')">💻 Hardware</button>
-                <button class="tab" onclick="switchTab('raw')">📄 Raw Data</button>
+                <button class="tab active" onclick="switchTab('overview', this)">📊 Overview</button>
+                <button class="tab" onclick="switchTab('browser', this)">🌐 Browser</button>
+                <button class="tab" onclick="switchTab('canvas', this)">🎨 Canvas</button>
+                <button class="tab" onclick="switchTab('webgl', this)">🎮 WebGL</button>
+                <button class="tab" onclick="switchTab('audio', this)">🔊 Audio</button>
+                <button class="tab" onclick="switchTab('hardware', this)">💻 Hardware</button>
+                <button class="tab" onclick="switchTab('raw', this)">📄 Raw Data</button>
             </div>
 
             <div id="overview-tab" class="tab-content active"></div>
@@ -636,12 +636,22 @@
             switchTab('overview');
         }
 
-        window.switchTab = function(tabName) {
+        window.switchTab = function(tabName, targetElement) {
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            event.target.classList.add('active');
+
+            // If called from click event (with targetElement), highlight the clicked tab
+            if (targetElement) {
+                targetElement.classList.add('active');
+            } else {
+                // If called programmatically, find and highlight the tab for this tabName
+                const targetTab = document.querySelector(`[onclick*="'${tabName}'"]`);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                }
+            }
 
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
