@@ -8,6 +8,11 @@ const crypto = require('crypto');
 const config = require('./config');
 const FingerprintDatabase = require('./database/database');
 
+// Admin authentication token (change this in production)
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'your-secure-admin-token-here';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
 const app = express();
 const PORT = config.server.port;
 
@@ -43,6 +48,37 @@ if (config.security.rateLimit.enabled) {
         message: 'Too many requests from this IP'
     });
     app.use('/api/', limiter);
+}
+
+// Admin authentication middleware
+function authenticateAdmin(req, res, next) {
+    // Check for token in header
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    // Check for basic auth
+    const basicAuth = req.headers['authorization'];
+    if (basicAuth && basicAuth.startsWith('Basic ')) {
+        const base64Credentials = basicAuth.split(' ')[1];
+        const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+        const [username, password] = credentials.split(':');
+
+        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+            return next();
+        }
+    }
+
+    // Check for token in query params
+    const queryToken = req.query.token;
+
+    if (token === ADMIN_TOKEN || queryToken === ADMIN_TOKEN) {
+        next();
+    } else {
+        res.status(401).json({
+            success: false,
+            error: 'Unauthorized. Please provide valid admin credentials.'
+        });
+    }
 }
 app.use(express.static('public'));
 app.use('/wasm', express.static('wasm-fingerprint/pkg'));
@@ -409,6 +445,396 @@ app.get('/api/config', (req, res) => {
         },
         environment: config.server.nodeEnv
     });
+});
+
+// Admin endpoint to download database
+app.get('/admin/database/download', authenticateAdmin, (req, res) => {
+    const dbPath = path.join(__dirname, 'database', 'fingerprints.db');
+
+    if (!fsSync.existsSync(dbPath)) {
+        return res.status(404).json({
+            success: false,
+            error: 'Database file not found'
+        });
+    }
+
+    res.download(dbPath, 'fingerprints.db', (err) => {
+        if (err) {
+            console.error('Error downloading database:', err);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to download database'
+            });
+        }
+    });
+});
+
+// Admin endpoint to get raw database records
+app.get('/admin/database/records', authenticateAdmin, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 100;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const records = await database.getAllRecords(limit, offset);
+        const stats = await database.getStatistics();
+
+        res.json({
+            success: true,
+            stats: stats,
+            records: records,
+            pagination: {
+                limit: limit,
+                offset: offset,
+                total: stats.totalSessions
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch database records'
+        });
+    }
+});
+
+// Admin endpoint to execute custom SQL queries (READ ONLY)
+app.post('/admin/database/query', authenticateAdmin, async (req, res) => {
+    try {
+        const { query } = req.body;
+
+        // Only allow SELECT queries for safety
+        if (!query || !query.trim().toUpperCase().startsWith('SELECT')) {
+            return res.status(400).json({
+                success: false,
+                error: 'Only SELECT queries are allowed'
+            });
+        }
+
+        const results = await database.executeQuery(query);
+
+        res.json({
+            success: true,
+            results: results,
+            count: results.length
+        });
+    } catch (error) {
+        console.error('Error executing query:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Admin endpoint to get log file
+app.get('/admin/logs/download', authenticateAdmin, async (req, res) => {
+    try {
+        if (!fsSync.existsSync(LOG_FILE)) {
+            return res.status(404).json({
+                success: false,
+                error: 'Log file not found'
+            });
+        }
+
+        res.download(LOG_FILE, 'fingerprints.log', (err) => {
+            if (err) {
+                console.error('Error downloading log file:', err);
+                res.status(500).json({
+                    success: false,
+                    error: 'Failed to download log file'
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error accessing log file:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to access log file'
+        });
+    }
+});
+
+// Admin dashboard endpoint
+app.get('/admin', authenticateAdmin, (req, res) => {
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Fingerprint System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #764ba2;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            transition: transform 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.3);
+        }
+        .query-box {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+        .results {
+            background: #f5f5f5;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow: auto;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .success {
+            background: #efe;
+            color: #060;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Admin Dashboard</h1>
+            <div class="subtitle">Fingerprint System Management</div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Database Statistics</h2>
+                <div id="stats">
+                    <div class="loading">Loading statistics...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📥 Download Data</h2>
+                <div class="actions">
+                    <a href="/admin/database/download?token=${ADMIN_TOKEN}" class="btn">Download Database</a>
+                    <a href="/admin/logs/download?token=${ADMIN_TOKEN}" class="btn">Download Logs</a>
+                    <button onclick="viewRecords()" class="btn">View Records</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔍 SQL Query Console (Read-Only)</h2>
+            <div class="query-box">
+                <textarea id="sqlQuery" placeholder="Enter SELECT query...\n\nExamples:\nSELECT * FROM fingerprints LIMIT 10;\nSELECT COUNT(*) as total FROM fingerprints;\nSELECT DISTINCT fingerprint_hash FROM fingerprints;">SELECT * FROM fingerprints ORDER BY server_timestamp DESC LIMIT 10;</textarea>
+                <button onclick="executeQuery()" class="btn">Execute Query</button>
+            </div>
+            <div id="queryResults"></div>
+        </div>
+
+        <div class="card" id="recordsCard" style="display:none;">
+            <h2>📝 Recent Records</h2>
+            <div id="records">
+                <div class="loading">Loading records...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = '${ADMIN_TOKEN}';
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+
+                document.getElementById('stats').innerHTML = \`
+                    <div class="stat">
+                        <span class="stat-label">Total Sessions</span>
+                        <span class="stat-value">\${stats.totalSessions || 0}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Unique Fingerprints</span>
+                        <span class="stat-value">\${stats.uniqueFingerprints || 0}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total Fingerprints</span>
+                        <span class="stat-value">\${stats.totalFingerprints || 0}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Average Sessions</span>
+                        <span class="stat-value">\${stats.averageSessionsPerFingerprint?.toFixed(2) || 0}</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Returning Users</span>
+                        <span class="stat-value">\${stats.returningUsers || 0}</span>
+                    </div>
+                \`;
+            } catch (error) {
+                document.getElementById('stats').innerHTML = '<div class="error">Failed to load statistics</div>';
+            }
+        }
+
+        async function viewRecords() {
+            document.getElementById('recordsCard').style.display = 'block';
+            try {
+                const response = await fetch('/admin/database/records?token=' + token + '&limit=20');
+                const data = await response.json();
+
+                if (data.success) {
+                    const recordsHtml = data.records.map(record => \`
+                        <div class="stat">
+                            <span class="stat-label">\${new Date(record.server_timestamp).toLocaleString()}</span>
+                            <span class="stat-value">\${record.fingerprint_hash?.substring(0, 16)}...</span>
+                        </div>
+                    \`).join('');
+
+                    document.getElementById('records').innerHTML = recordsHtml || '<div class="error">No records found</div>';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                document.getElementById('records').innerHTML = '<div class="error">Failed to load records: ' + error.message + '</div>';
+            }
+        }
+
+        async function executeQuery() {
+            const query = document.getElementById('sqlQuery').value;
+            const resultsDiv = document.getElementById('queryResults');
+
+            resultsDiv.innerHTML = '<div class="loading">Executing query...</div>';
+
+            try {
+                const response = await fetch('/admin/database/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultsDiv.innerHTML = \`
+                        <div class="success">Query executed successfully. Found \${data.count} results.</div>
+                        <div class="results">
+                            <pre>\${JSON.stringify(data.results, null, 2)}</pre>
+                        </div>
+                    \`;
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+
+        // Load stats on page load
+        loadStats();
+        setInterval(loadStats, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html>
+`;
+    res.send(html);
 });
 
 // Health check endpoint

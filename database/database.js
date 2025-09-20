@@ -260,6 +260,60 @@ class FingerprintDatabase {
         });
     }
 
+    // Get all records with pagination
+    async getAllRecords(limit = 100, offset = 0) {
+        await this.initialize();
+
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT
+                    f.*,
+                    bi.user_agent,
+                    bi.platform,
+                    bi.language,
+                    hw.cores,
+                    hw.memory,
+                    hw.cpu_benchmark,
+                    hw.memory_benchmark
+                FROM fingerprints f
+                LEFT JOIN browser_info bi ON f.fingerprint_id = bi.fingerprint_id
+                LEFT JOIN hardware_benchmarks hw ON f.fingerprint_id = hw.fingerprint_id
+                ORDER BY f.server_timestamp DESC
+                LIMIT ? OFFSET ?
+            `;
+
+            this.db.all(query, [limit, offset], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows || []);
+                }
+            });
+        });
+    }
+
+    // Execute custom query (read-only)
+    async executeQuery(query) {
+        await this.initialize();
+
+        return new Promise((resolve, reject) => {
+            // Ensure query is SELECT only
+            const cleanQuery = query.trim();
+            if (!cleanQuery.toUpperCase().startsWith('SELECT')) {
+                reject(new Error('Only SELECT queries are allowed'));
+                return;
+            }
+
+            this.db.all(cleanQuery, [], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows || []);
+                }
+            });
+        });
+    }
+
     // Get statistics
     async getStatistics() {
         await this.initialize();
