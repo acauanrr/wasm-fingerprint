@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guia do Browser Fingerprinting - WASM Fingerprint</title>
+    <title>Guia - WASM Fingerprint</title>
     <style>
         * {
             margin: 0;
@@ -65,7 +65,7 @@
 
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
@@ -117,6 +117,18 @@
             gap: 15px;
         }
 
+        .info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #b8e0f5 100%);
+            border: 1px solid #0c5460;
+            color: #0c5460;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
         .steps {
             counter-reset: step-counter;
         }
@@ -154,6 +166,7 @@
             padding: 15px;
             font-family: 'Courier New', monospace;
             margin: 10px 0;
+            overflow-x: auto;
         }
 
         .back-btn {
@@ -168,6 +181,21 @@
             cursor: pointer;
             font-weight: 600;
             backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin-bottom: 8px;
         }
     </style>
 </head>
@@ -176,193 +204,181 @@
 
     <div class="container">
         <div class="header">
-            <h1>🔍 Guia do Browser Fingerprinting</h1>
-            <p>Como usar e interpretar os dados coletados</p>
+            <h1>📚 Guia do Sistema</h1>
+            <p>Como usar o WASM Fingerprint para testes de privacidade</p>
         </div>
 
         <div class="content">
             <div class="warning">
-                <span style="font-size: 1.5em;">⚠️</span>
+                <span style="font-size: 1.5em;">🔬</span>
                 <div>
-                    <strong>Demo Acadêmica:</strong> Esta é uma demonstração para fins de pesquisa em privacidade digital.
-                    Nenhum dado é armazenado permanentemente ou compartilhado com terceiros.
+                    <strong>Sistema de Pesquisa:</strong> Este é um projeto acadêmico para estudo de privacidade digital e técnicas de fingerprinting. Dados temporários no Heroku (resetam a cada ~24h).
                 </div>
             </div>
 
             <div class="section">
-                <h2>🎯 O que é Browser Fingerprinting?</h2>
-                <p>Browser fingerprinting é uma técnica que coleta informações específicas do seu navegador e dispositivo para criar uma "impressão digital" única. Esta identificação pode ser usada para rastrear usuários mesmo sem cookies.</p>
+                <h2>🚀 Início Rápido</h2>
+                <div class="steps">
+                    <div class="step">
+                        <strong>Coletar Fingerprint</strong>
+                        <p>Clique em <strong>"🎯 Start Collection"</strong> para coletar todos os dados do seu navegador.</p>
+                    </div>
+                    <div class="step">
+                        <strong>Visualizar Resultados</strong>
+                        <p>Explore as abas para ver os dados coletados: Canvas, WebGL, Audio, Hardware, etc.</p>
+                    </div>
+                    <div class="step">
+                        <strong>Comparar Sessões</strong>
+                        <p>Faça duas coletas e clique em <strong>"🔄 Compare Sessions"</strong> para verificar se é o mesmo dispositivo.</p>
+                    </div>
+                </div>
+            </div>
 
-                <h3>Nosso Sistema Implementa:</h3>
+            <div class="section">
+                <h2>🔍 O que é Coletado?</h2>
                 <div class="feature-grid">
                     <div class="feature-card">
-                        <h4>🎨 Canvas Fingerprinting</h4>
-                        <p>Renderiza gráficos invisíveis e analisa como seu hardware/software processa as imagens.</p>
+                        <h4>🎨 Canvas</h4>
+                        <p>Renderiza gráficos invisíveis para criar uma assinatura única baseada em GPU/drivers.</p>
                     </div>
                     <div class="feature-card">
-                        <h4>🎮 WebGL Fingerprinting</h4>
-                        <p>Identifica sua placa de vídeo e drivers através de informações de renderização 3D.</p>
+                        <h4>🎮 WebGL</h4>
+                        <p>Identifica placa de vídeo e capacidades de renderização 3D.</p>
                     </div>
                     <div class="feature-card">
-                        <h4>🔊 Audio Fingerprinting</h4>
-                        <p>Analisa como seu sistema processa sinais de áudio para detectar diferenças de hardware.</p>
+                        <h4>🔊 Audio</h4>
+                        <p>Processa sinais de áudio para detectar diferenças de hardware/software.</p>
                     </div>
                     <div class="feature-card">
-                        <h4>💻 Hardware Benchmarks</h4>
-                        <p>Testa performance do processador usando WebAssembly para detectar microarquitetura.</p>
+                        <h4>⚡ Hardware</h4>
+                        <p>Benchmarks em WebAssembly para identificar características do CPU.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🌐 Browser</h4>
+                        <p>User Agent, resolução, timezone, linguagem e outras configurações.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🔒 Session ID</h4>
+                        <p>Identificador único da sessão para rastrear múltiplas coletas.</p>
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>📝 Como Usar o Sistema</h2>
-                <div class="steps">
-                    <div class="step">
-                        <h4>Coleta Inicial</h4>
-                        <p>Clique em <strong>"🎯 Start Collection"</strong> para executar a coleta completa de fingerprint. O processo leva alguns segundos e coleta dados de Canvas, WebGL, Audio e informações do navegador.</p>
-                    </div>
-                    <div class="step">
-                        <h4>Testes de Hardware</h4>
-                        <p>Use <strong>"⚡ Hardware Benchmarks"</strong> para executar apenas os testes de performance que analisam características específicas do seu processador.</p>
-                    </div>
-                    <div class="step">
-                        <h4>Comparação de Sessões</h4>
-                        <p>Execute a coleta duas vezes e depois clique em <strong>"🔄 Compare Sessions"</strong> para ver se o sistema consegue detectar que é o mesmo dispositivo.</p>
-                    </div>
-                    <div class="step">
-                        <h4>Análise dos Resultados</h4>
-                        <p>Use as abas para explorar os diferentes tipos de dados coletados: Overview, Browser, Canvas, WebGL, Audio, Hardware e Raw Data.</p>
-                    </div>
-                </div>
-            </div>
+                <h2>📊 Entendendo os Resultados</h2>
 
-            <div class="section">
-                <h2>📊 Interpretando os Resultados</h2>
-
-                <h3>🔐 Fingerprint Hash</h3>
-                <p>O hash principal é uma combinação SHA-256 de todos os dados coletados. Dispositivos idênticos devem gerar o mesmo hash.</p>
-
-                <h3>🌐 Informações do Navegador</h3>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li><strong>User Agent:</strong> Identifica o navegador e sistema operacional</li>
-                    <li><strong>Resolução de Tela:</strong> Dimensões da sua tela</li>
-                    <li><strong>Profundidade de Cor:</strong> Quantos bits por pixel sua tela suporta</li>
-                    <li><strong>Timezone Offset:</strong> Seu fuso horário em relação ao UTC</li>
+                <h3>Identificadores Principais</h3>
+                <ul>
+                    <li><strong>Session ID:</strong> Identifica unicamente o seu navegador/sessão</li>
+                    <li><strong>Fingerprint Hash:</strong> Varia a cada coleta devido aos benchmarks dinâmicos</li>
+                    <li><strong>Canvas/WebGL/Audio Hash:</strong> Geralmente constantes no mesmo dispositivo</li>
                 </ul>
 
-                <h3>💻 Perfil de Hardware</h3>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li><strong>Cores/Concurrency:</strong> Número de núcleos do processador detectados</li>
-                    <li><strong>Benchmarks:</strong> Tempos de execução em milissegundos para diferentes operações</li>
-                    <li><strong>Math/String/Array/Crypto Ops:</strong> Performance em operações específicas</li>
-                </ul>
-            </div>
-
-            <div class="section">
-                <h2>🔄 Como Testar Comparações</h2>
-
-                <h3>Cenário 1: Mesmo Dispositivo</h3>
-                <div class="steps">
-                    <div class="step">
-                        Execute a coleta uma primeira vez
-                    </div>
-                    <div class="step">
-                        Execute a coleta uma segunda vez
-                    </div>
-                    <div class="step">
-                        Clique em "🔄 Compare Sessions"
-                    </div>
-                    <div class="step">
-                        Resultado esperado: "✅ Same Device"
+                <div class="info">
+                    <span style="font-size: 1.5em;">💡</span>
+                    <div>
+                        <strong>Importante:</strong> O sistema conta usuários únicos pelo Session ID, não pelo fingerprint hash, pois os benchmarks de hardware variam ligeiramente a cada execução.
                     </div>
                 </div>
 
-                <h3>Cenário 2: Dispositivos Diferentes</h3>
-                <div class="steps">
-                    <div class="step">
-                        Execute a coleta em um navegador (ex: Chrome)
-                    </div>
-                    <div class="step">
-                        Execute a coleta em outro navegador (ex: Firefox/Edge)
-                    </div>
-                    <div class="step">
-                        Compare os resultados manualmente observando os hashes
-                    </div>
-                    <div class="step">
-                        Resultado esperado: Hashes diferentes
-                    </div>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2>🗂️ Persistência de Dados com SQLite</h2>
-                <p>O sistema agora usa <strong>SQLite</strong> como banco de dados principal, proporcionando maior robustez e capacidade de consulta:</p>
-
-                <h3>🏗️ Estrutura do Banco</h3>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>📋 Tabela Principal</h4>
-                        <p><strong>fingerprints:</strong> Dados básicos de cada coleta</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>🌐 Informações do Browser</h4>
-                        <p><strong>browser_info:</strong> User-agent, plataforma, resolução</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>🎨 Fingerprints Específicos</h4>
-                        <p><strong>canvas_fingerprints, webgl_fingerprints, audio_fingerprints</strong></p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>💻 Perfil de Hardware</h4>
-                        <p><strong>hardware_profiles, hardware_benchmarks</strong></p>
-                    </div>
-                </div>
-
-                <h3>🔧 Backup e Compatibilidade</h3>
-                <p>O sistema mantém compatibilidade com o arquivo de log anterior:</p>
-                <p>Ambos os formatos são atualizados simultaneamente para garantir backup dos dados.</p>
-
-                <h3>📊 Vantagens do SQLite</h3>
-                <ul style="margin-left: 20px; margin-top: 10px;">
-                    <li><strong>Consultas estruturadas:</strong> SQL para análises complexas</li>
-                    <li><strong>Relacionamentos:</strong> Dados organizados em tabelas relacionadas</li>
-                    <li><strong>Índices:</strong> Busca rápida por hash, sessão, timestamp</li>
-                    <li><strong>Integridade:</strong> Transações ACID garantem consistência</li>
-                    <li><strong>Escalabilidade:</strong> Suporta milhões de fingerprints</li>
-                    <li><strong>Análises:</strong> Cálculo automático de entropia e estatísticas</li>
+                <h3>Estatísticas do Sistema</h3>
+                <ul>
+                    <li><strong>Total Fingerprints:</strong> Número total de coletas realizadas</li>
+                    <li><strong>Unique Users:</strong> Número de sessões/navegadores únicos</li>
+                    <li><strong>Returning Users:</strong> Usuários que fizeram múltiplas coletas</li>
+                    <li><strong>Avg per User:</strong> Média de coletas por usuário</li>
                 </ul>
             </div>
 
             <div class="section">
-                <h2>🛡️ Endpoints da API</h2>
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>📊 /api/stats</h4>
-                        <p>Estatísticas gerais: total de fingerprints únicos e sessões</p>
+                <h2>🧪 Como Testar</h2>
+
+                <h3>Teste 1: Mesmo Navegador</h3>
+                <div class="steps">
+                    <div class="step">
+                        Faça uma coleta inicial
                     </div>
-                    <div class="feature-card">
-                        <h4>🏥 /health</h4>
-                        <p>Status do servidor e informações de sistema</p>
+                    <div class="step">
+                        Aguarde alguns segundos e faça outra coleta
                     </div>
-                    <div class="feature-card">
-                        <h4>📈 /api/analytics</h4>
-                        <p>Análises detalhadas com cálculos de entropia</p>
+                    <div class="step">
+                        Use "Compare Sessions" - Resultado: <strong>✅ Same Device</strong>
                     </div>
-                    <div class="feature-card">
-                        <h4>🔍 /api/fingerprint/:id</h4>
-                        <p>Buscar fingerprint específico por ID</p>
+                </div>
+
+                <h3>Teste 2: Navegadores Diferentes</h3>
+                <div class="steps">
+                    <div class="step">
+                        Colete no Chrome
+                    </div>
+                    <div class="step">
+                        Abra no Edge/Firefox e colete
+                    </div>
+                    <div class="step">
+                        Compare os Session IDs - Resultado: <strong>IDs diferentes</strong>
+                    </div>
+                </div>
+
+                <h3>Teste 3: Aba Anônima</h3>
+                <div class="steps">
+                    <div class="step">
+                        Colete em aba normal
+                    </div>
+                    <div class="step">
+                        Abra aba anônima/privada e colete
+                    </div>
+                    <div class="step">
+                        Compare - Resultado: <strong>Novo Session ID</strong> (mas hardware similar)
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>⚠️ Limitações e Considerações</h2>
-                <ul style="margin-left: 20px;">
-                    <li>Os dados são armazenados apenas localmente durante a demonstração</li>
-                    <li>Alguns valores podem variar ligeiramente entre execuções (ex: benchmarks)</li>
-                    <li>Navegadores diferentes podem ter implementações ligeiramente diferentes das APIs</li>
-                    <li>Extensões do navegador podem afetar os resultados</li>
-                    <li>Este é um sistema de demonstração acadêmica, não destinado ao uso em produção</li>
+                <h2>🔧 Armazenamento de Dados</h2>
+
+                <h3>Sistema Simplificado JSON</h3>
+                <p>O sistema usa logs JSON para máxima simplicidade e portabilidade:</p>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>📁 Local</h4>
+                        <p><code>./data/fingerprints.log</code> - Persistente em desenvolvimento</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>☁️ Heroku</h4>
+                        <p><code>/tmp/data/fingerprints.log</code> - Temporário (~24h)</p>
+                    </div>
+                </div>
+
+                <h3>Admin Dashboard</h3>
+                <p>Acesso restrito para visualizar estatísticas e gerenciar dados:</p>
+                <ul>
+                    <li>Estatísticas em tempo real</li>
+                    <li>Download de logs em JSON</li>
+                    <li>Reset de dados com confirmação</li>
+                    <li>Visualização de fingerprints recentes</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🛡️ API Endpoints</h2>
+                <div class="code">
+POST /api/fingerprint     - Enviar fingerprint coletado
+GET  /api/stats          - Estatísticas gerais
+GET  /api/fingerprint/:id - Buscar fingerprint específico
+POST /api/compare        - Comparar dois fingerprints
+GET  /health             - Status do sistema
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⚠️ Limitações</h2>
+                <ul>
+                    <li>Dados no Heroku são temporários (resetam com dyno restart)</li>
+                    <li>Benchmarks variam ±10% entre execuções (normal)</li>
+                    <li>Extensões do navegador podem afetar resultados</li>
+                    <li>Modo privado/anônimo gera novo Session ID</li>
+                    <li>Sistema para fins acadêmicos apenas</li>
                 </ul>
             </div>
 
