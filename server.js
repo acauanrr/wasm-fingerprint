@@ -88,11 +88,21 @@ app.use(express.static('public'));
 app.use('/wasm', express.static('wasm-fingerprint/pkg'));
 app.use('/wasm-fingerprint', express.static('wasm-fingerprint'));
 
-// Initialize SQLite database
-const database = new FingerprintDatabase('./database/fingerprints.db');
+// Initialize SQLite database with proper path for Heroku
+// On Heroku, we need to use /tmp for writable storage (ephemeral)
+const dbPath = process.env.DATABASE_PATH || (process.env.NODE_ENV === 'production' ? '/tmp/fingerprints.db' : './database/fingerprints.db');
+const database = new FingerprintDatabase(dbPath);
+
+// Initialize database on startup
+database.initialize().then(() => {
+    console.log('Database initialized successfully');
+}).catch(err => {
+    console.error('Failed to initialize database:', err);
+});
 
 // Legacy file-based storage (optional backup)
-const LOG_DIR = path.join(__dirname, config.storage.dataDir);
+// On Heroku, use /tmp for writable storage
+const LOG_DIR = process.env.NODE_ENV === 'production' ? '/tmp/data' : path.join(__dirname, config.storage.dataDir);
 const LOG_FILE = path.join(LOG_DIR, config.storage.logFile);
 
 // Ensure data directory exists
@@ -453,16 +463,16 @@ app.get('/api/config', (req, res) => {
 
 // Admin endpoint to download database
 app.get('/admin/database/download', authenticateAdmin, (req, res) => {
-    const dbPath = path.join(__dirname, 'database', 'fingerprints.db');
+    const actualDbPath = process.env.DATABASE_PATH || (process.env.NODE_ENV === 'production' ? '/tmp/fingerprints.db' : path.join(__dirname, 'database', 'fingerprints.db'));
 
-    if (!fsSync.existsSync(dbPath)) {
+    if (!fsSync.existsSync(actualDbPath)) {
         return res.status(404).json({
             success: false,
-            error: 'Database file not found'
+            error: 'Database file not found at: ' + actualDbPath
         });
     }
 
-    res.download(dbPath, 'fingerprints.db', (err) => {
+    res.download(actualDbPath, 'fingerprints.db', (err) => {
         if (err) {
             console.error('Error downloading database:', err);
             res.status(500).json({
@@ -853,7 +863,7 @@ app.get('/health', async (req, res) => {
             timestamp: new Date().toISOString(),
             database: {
                 type: 'SQLite',
-                path: './database/fingerprints.db',
+                path: dbPath,
                 totalFingerprints: stats.totalFingerprints,
                 totalSessions: stats.totalSessions,
                 uniqueFingerprints: stats.uniqueFingerprints
@@ -870,7 +880,7 @@ app.get('/health', async (req, res) => {
             timestamp: new Date().toISOString(),
             database: {
                 type: 'SQLite',
-                path: './database/fingerprints.db',
+                path: dbPath,
                 status: 'error',
                 error: error.message
             }
