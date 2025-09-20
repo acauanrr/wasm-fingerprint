@@ -6,6 +6,7 @@ const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const config = require('./config');
+const FingerprintMatcher = require('./fingerprint-matcher');
 
 // Admin authentication
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'your-secure-admin-token-here';
@@ -107,52 +108,30 @@ async function readLogs() {
     }
 }
 
-// Calculate statistics from logs
+// Calculate statistics from logs using fingerprint matching
 async function calculateStats() {
     const logs = await readLogs();
 
-    // Track unique sessions (unique users/devices)
-    const uniqueSessions = new Set();
-    const sessionOccurrences = {};
-    const fingerprintHashes = new Set();
+    // Use FingerprintMatcher to identify unique devices
+    const matcher = new FingerprintMatcher();
+    const stats = matcher.calculateStatistics(logs);
 
-    logs.forEach(entry => {
-        // Count unique sessions (users)
-        if (entry.sessionId) {
-            uniqueSessions.add(entry.sessionId);
+    // Add recent activity count
+    stats.recentActivity = logs.filter(entry => {
+        const entryTime = new Date(entry.serverTimestamp || entry.clientTimestamp);
+        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        return entryTime > dayAgo;
+    }).length;
 
-            // Count how many times each session appears
-            if (!sessionOccurrences[entry.sessionId]) {
-                sessionOccurrences[entry.sessionId] = 0;
-            }
-            sessionOccurrences[entry.sessionId]++;
-        }
-
-        // Also track unique fingerprint hashes for comparison
-        if (entry.data && entry.data.fingerprint_hash) {
-            fingerprintHashes.add(entry.data.fingerprint_hash);
-        }
-    });
-
-    // Users who have submitted multiple fingerprints (returning users)
-    const returningUsers = Object.keys(sessionOccurrences)
-        .filter(sessionId => sessionOccurrences[sessionId] > 1).length;
-
-    const totalUniqueUsers = uniqueSessions.size;
-    const totalFingerprints = logs.length;
-    const averageSessions = totalUniqueUsers > 0 ? (totalFingerprints / totalUniqueUsers).toFixed(2) : 0;
-
+    // Rename for backwards compatibility
     return {
-        totalFingerprints: totalFingerprints,
-        uniqueFingerprints: totalUniqueUsers, // Changed: now represents unique users/sessions
-        totalSessions: totalUniqueUsers,
-        returningUsers: returningUsers,
-        averageSessionsPerFingerprint: averageSessions,
-        recentActivity: logs.filter(entry => {
-            const entryTime = new Date(entry.serverTimestamp || entry.clientTimestamp);
-            const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            return entryTime > dayAgo;
-        }).length
+        totalFingerprints: stats.totalFingerprints,
+        uniqueFingerprints: stats.uniqueDevices,  // Now based on fingerprint similarity!
+        totalSessions: stats.uniqueDevices,
+        returningUsers: stats.returningDevices,
+        averageSessionsPerFingerprint: stats.averageCollectionsPerDevice,
+        recentActivity: stats.recentActivity,
+        deviceGroups: stats.deviceGroups  // New: detailed device grouping info
     };
 }
 
@@ -256,7 +235,7 @@ app.get('/api/fingerprint/:id', async (req, res) => {
     }
 });
 
-// Compare fingerprints
+// Compare fingerprints using intelligent matching
 app.post('/api/compare-fingerprints', (req, res) => {
     const { fingerprint1, fingerprint2 } = req.body;
 
@@ -267,18 +246,29 @@ app.post('/api/compare-fingerprints', (req, res) => {
         });
     }
 
-    const isMatch = fingerprint1.fingerprint_hash === fingerprint2.fingerprint_hash;
-    const confidence = isMatch ? 1.0 : 0.0;
+    const matcher = new FingerprintMatcher();
+    const similarity = matcher.calculateSimilarity(fingerprint1, fingerprint2);
+    const isMatch = matcher.isSameDevice(fingerprint1, fingerprint2);
+    const confidence = matcher.getMatchConfidence(similarity);
 
     res.json({
         success: true,
         isMatch,
+        similarity: (similarity * 100).toFixed(1) + '%',
         confidence,
         details: {
             canvas: fingerprint1.canvas_fingerprint?.hash === fingerprint2.canvas_fingerprint?.hash,
             webgl: fingerprint1.webgl_fingerprint?.hash === fingerprint2.webgl_fingerprint?.hash,
             audio: fingerprint1.audio_fingerprint?.hash === fingerprint2.audio_fingerprint?.hash,
-            hardware: fingerprint1.hardware_profile?.cpu_benchmark === fingerprint2.hardware_profile?.cpu_benchmark
+            browserMatch: matcher.compareBrowserInfo(fingerprint1.browser_info, fingerprint2.browser_info),
+            hardwareStable: matcher.compareHardwareStable(fingerprint1.hardware_profile, fingerprint2.hardware_profile),
+            hardwareDynamic: matcher.compareHardwareDynamic(fingerprint1.hardware_profile, fingerprint2.hardware_profile)
+        },
+        thresholds: {
+            sameDevice: '85%+',
+            likely: '75-85%',
+            possible: '65-75%',
+            different: '<65%'
         }
     });
 });
