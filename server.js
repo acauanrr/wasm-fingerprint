@@ -74,6 +74,10 @@ function authenticateAdmin(req, res, next) {
     if (token === ADMIN_TOKEN || queryToken === ADMIN_TOKEN) {
         next();
     } else {
+        // For browser access, send WWW-Authenticate header
+        if (req.path === '/admin' && !authHeader && !queryToken) {
+            res.setHeader('WWW-Authenticate', 'Basic realm="Admin Dashboard"');
+        }
         res.status(401).json({
             success: false,
             error: 'Unauthorized. Please provide valid admin credentials.'
@@ -738,6 +742,8 @@ app.get('/admin', authenticateAdmin, (req, res) => {
 
     <script>
         const token = '${ADMIN_TOKEN}';
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasToken = urlParams.has('token');
 
         async function loadStats() {
             try {
