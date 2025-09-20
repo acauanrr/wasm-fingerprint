@@ -255,14 +255,17 @@ app.post('/api/compare-fingerprints', (req, res) => {
         success: true,
         isMatch,
         similarity: (similarity * 100).toFixed(1) + '%',
+        similarityScore: similarity,  // Return numeric value too
         confidence,
         details: {
             canvas: fingerprint1.canvas_fingerprint?.hash === fingerprint2.canvas_fingerprint?.hash,
             webgl: fingerprint1.webgl_fingerprint?.hash === fingerprint2.webgl_fingerprint?.hash,
             audio: fingerprint1.audio_fingerprint?.hash === fingerprint2.audio_fingerprint?.hash,
-            browserMatch: matcher.compareBrowserInfo(fingerprint1.browser_info, fingerprint2.browser_info),
-            hardwareStable: matcher.compareHardwareStable(fingerprint1.hardware_profile, fingerprint2.hardware_profile),
-            hardwareDynamic: matcher.compareHardwareDynamic(fingerprint1.hardware_profile, fingerprint2.hardware_profile)
+            browser: matcher.compareBrowserInfo(fingerprint1.browser_info || {}, fingerprint2.browser_info || {}),
+            hardware: Math.max(
+                matcher.compareHardwareStable(fingerprint1.hardware_profile || {}, fingerprint2.hardware_profile || {}),
+                matcher.compareHardwareDynamic(fingerprint1.hardware_profile || {}, fingerprint2.hardware_profile || {})
+            )
         },
         thresholds: {
             sameDevice: '85%+',

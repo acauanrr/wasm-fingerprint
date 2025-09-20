@@ -878,6 +878,22 @@ ${JSON.stringify(data, null, 2)}
                 if (comparison.success) {
                     // Update with intelligent comparison results
                     const lastSection = document.querySelector('.comparison-section:last-child');
+
+                    // Calculate percentages safely
+                    const similarityPercent = comparison.similarityScore ?
+                        (comparison.similarityScore * 100).toFixed(1) :
+                        comparison.similarity;
+
+                    const hardwarePercent = comparison.details.hardware !== undefined &&
+                                          comparison.details.hardware !== null &&
+                                          !isNaN(comparison.details.hardware) ?
+                        (comparison.details.hardware * 100).toFixed(1) : '0.0';
+
+                    const browserPercent = comparison.details.browser !== undefined &&
+                                         comparison.details.browser !== null &&
+                                         !isNaN(comparison.details.browser) ?
+                        (comparison.details.browser * 100).toFixed(1) : '0.0';
+
                     lastSection.innerHTML = `
                         <h3>🔄 Session Comparison</h3>
                         <div class="metric-item">
@@ -887,8 +903,12 @@ ${JSON.stringify(data, null, 2)}
                             </span>
                         </div>
                         <div class="metric-item">
-                            <span class="metric-label">Confidence Score:</span>
-                            <span class="metric-value">${(comparison.confidence * 100).toFixed(1)}%</span>
+                            <span class="metric-label">Similarity Score:</span>
+                            <span class="metric-value">${similarityPercent}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Confidence Level:</span>
+                            <span class="metric-value">${comparison.confidence}</span>
                         </div>
                         <div class="metric-item">
                             <span class="metric-label">Component Analysis:</span>
@@ -896,8 +916,8 @@ ${JSON.stringify(data, null, 2)}
                                 <div>Canvas: ${comparison.details.canvas ? '✅' : '❌'}</div>
                                 <div>WebGL: ${comparison.details.webgl ? '✅' : '❌'}</div>
                                 <div>Audio: ${comparison.details.audio ? '✅' : '❌'}</div>
-                                <div>Hardware: ${(comparison.details.hardware * 100).toFixed(1)}%</div>
-                                <div>Browser: ${(comparison.details.browser * 100).toFixed(1)}%</div>
+                                <div>Hardware: ${hardwarePercent}%</div>
+                                <div>Browser: ${browserPercent}%</div>
                             </div>
                         </div>
                         <div class="metric-item">
