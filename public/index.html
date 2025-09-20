@@ -126,6 +126,8 @@
             font-size: 1.2em;
             display: flex;
             align-items: center;
+            justify-content: center;
+            text-align: center;
             gap: 10px;
         }
 
@@ -411,6 +413,20 @@
             color: #721c24;
         }
 
+        .component-details {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .component-details div {
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
         .error-message {
             background: #fff0f0;
             border-left: 4px solid #dc3545;
@@ -467,9 +483,6 @@
         <div class="button-group">
             <button id="collectBtn" class="btn" onclick="collectFingerprint()">
                 🎯 Start Collection
-            </button>
-            <button id="hardwareBtn" class="btn" onclick="runHardwareBenchmarks()">
-                ⚡ Hardware Benchmarks
             </button>
             <button id="compareBtn" class="btn" onclick="compareWithPrevious()">
                 🔄 Compare Sessions
@@ -587,7 +600,7 @@
             }
         }
 
-        window.compareWithPrevious = function() {
+        window.compareWithPrevious = async function() {
             const statusDiv = document.getElementById('status');
 
             if (!currentFingerprint) {
@@ -618,7 +631,7 @@
                 return;
             }
 
-            displayComparison(currentFingerprint, previousFingerprint);
+            await displayComparison(currentFingerprint, previousFingerprint);
             document.getElementById('results').classList.add('active');
             switchTab('overview');
         }
@@ -830,11 +843,91 @@ ${JSON.stringify(data, null, 2)}
             `;
         }
 
-        function displayComparison(current, previous) {
-            const match = current.fingerprint_hash === previous.fingerprint_hash;
-
+        async function displayComparison(current, previous) {
+            // Show loading state first
             document.getElementById('overview-tab').innerHTML += `
                 <div class="comparison-section">
+                    <h3>🔄 Session Comparison</h3>
+                    <div class="metric-item">
+                        <span class="metric-label">Status:</span>
+                        <span class="metric-value">🔄 Analyzing...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Use intelligent comparison endpoint
+                const response = await fetch('/api/compare-fingerprints', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fingerprint1: current,
+                        fingerprint2: previous
+                    })
+                });
+
+                const comparison = await response.json();
+
+                if (comparison.success) {
+                    // Update with intelligent comparison results
+                    const lastSection = document.querySelector('.comparison-section:last-child');
+                    lastSection.innerHTML = `
+                        <h3>🔄 Session Comparison</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">Match Status:</span>
+                            <span class="match-indicator ${comparison.isMatch ? 'match' : 'no-match'}">
+                                ${comparison.isMatch ? '✅ Same Device' : '❌ Different Device'}
+                            </span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Confidence Score:</span>
+                            <span class="metric-value">${(comparison.confidence * 100).toFixed(1)}%</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Component Analysis:</span>
+                            <div class="component-details">
+                                <div>Canvas: ${comparison.details.canvas ? '✅' : '❌'}</div>
+                                <div>WebGL: ${comparison.details.webgl ? '✅' : '❌'}</div>
+                                <div>Audio: ${comparison.details.audio ? '✅' : '❌'}</div>
+                                <div>Hardware: ${(comparison.details.hardware * 100).toFixed(1)}%</div>
+                                <div>Browser: ${(comparison.details.browser * 100).toFixed(1)}%</div>
+                            </div>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Current Hash:</span>
+                            <span class="metric-value">${current.fingerprint_hash?.substring(0, 32) || 'N/A'}...</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Previous Hash:</span>
+                            <span class="metric-value">${previous.fingerprint_hash?.substring(0, 32) || 'N/A'}...</span>
+                        </div>
+                    `;
+                } else {
+                    // Fallback to simple hash comparison
+                    const match = current.fingerprint_hash === previous.fingerprint_hash;
+                    const lastSection = document.querySelector('.comparison-section:last-child');
+                    lastSection.innerHTML = `
+                        <h3>🔄 Session Comparison</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">Match Status:</span>
+                            <span class="match-indicator ${match ? 'match' : 'no-match'}">
+                                ${match ? '✅ Same Device' : '❌ Different Device'}
+                            </span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Note:</span>
+                            <span class="metric-value">Simple hash comparison used</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error in intelligent comparison:', error);
+                // Fallback to simple hash comparison
+                const match = current.fingerprint_hash === previous.fingerprint_hash;
+                const lastSection = document.querySelector('.comparison-section:last-child');
+                lastSection.innerHTML = `
                     <h3>🔄 Session Comparison</h3>
                     <div class="metric-item">
                         <span class="metric-label">Match Status:</span>
@@ -843,15 +936,11 @@ ${JSON.stringify(data, null, 2)}
                         </span>
                     </div>
                     <div class="metric-item">
-                        <span class="metric-label">Current Hash:</span>
-                        <span class="metric-value">${current.fingerprint_hash?.substring(0, 32) || 'N/A'}...</span>
+                        <span class="metric-label">Note:</span>
+                        <span class="metric-value">Fallback comparison used</span>
                     </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Previous Hash:</span>
-                        <span class="metric-value">${previous.fingerprint_hash?.substring(0, 32) || 'N/A'}...</span>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         }
 
         async function sendToServer(data) {

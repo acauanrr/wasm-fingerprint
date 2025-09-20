@@ -240,16 +240,30 @@ app.post('/api/compare', (req, res) => {
 function calculateHardwareSimilarity(hw1, hw2) {
     if (!hw1 || !hw2) return 0;
 
-    const cpuDiff = Math.abs(hw1.cpu_benchmark - hw2.cpu_benchmark);
-    const memDiff = Math.abs(hw1.memory_benchmark - hw2.memory_benchmark);
-    const cryptoDiff = Math.abs(hw1.crypto_benchmark - hw2.crypto_benchmark);
+    // Helper function to calculate similarity with percentage threshold
+    const calculateThresholdSimilarity = (val1, val2, thresholdPercent = 0.15) => {
+        if (val1 === 0 && val2 === 0) return 1.0;
+        if (val1 === 0 || val2 === 0) return 0.0;
 
-    // Normalize differences (assuming max reasonable difference of 100ms)
-    const cpuSim = Math.max(0, 1 - cpuDiff / 100);
-    const memSim = Math.max(0, 1 - memDiff / 100);
-    const cryptoSim = Math.max(0, 1 - cryptoDiff / 100);
+        const percentageDiff = Math.abs(val1 - val2) / Math.max(val1, val2);
+        return percentageDiff <= thresholdPercent ? 1.0 : Math.max(0, 1 - (percentageDiff / thresholdPercent));
+    };
 
-    return (cpuSim + memSim + cryptoSim) / 3;
+    // Calculate similarity with 15% tolerance for benchmarks
+    const cpuSim = calculateThresholdSimilarity(hw1.cpu_benchmark, hw2.cpu_benchmark);
+    const memSim = calculateThresholdSimilarity(hw1.memory_benchmark, hw2.memory_benchmark);
+    const cryptoSim = calculateThresholdSimilarity(hw1.crypto_benchmark, hw2.crypto_benchmark);
+
+    // Check hardware specs (should be exact matches)
+    const coresSim = (hw1.cores === hw2.cores) ? 1.0 : 0.0;
+    const memorySim = (hw1.memory === hw2.memory) ? 1.0 : 0.0;
+    const concurrencySim = (hw1.concurrency === hw2.concurrency) ? 1.0 : 0.0;
+
+    // Weight: 60% benchmarks (with tolerance), 40% hardware specs (exact)
+    const benchmarkScore = (cpuSim + memSim + cryptoSim) / 3;
+    const hardwareScore = (coresSim + memorySim + concurrencySim) / 3;
+
+    return benchmarkScore * 0.6 + hardwareScore * 0.4;
 }
 
 function calculateBrowserSimilarity(attr1, attr2) {
@@ -275,6 +289,78 @@ function calculateBrowserSimilarity(attr1, attr2) {
 
     return matches / total;
 }
+
+// Enhanced fingerprint comparison with tolerance
+function compareFingerprints(fp1, fp2) {
+    if (!fp1 || !fp2) return { isMatch: false, confidence: 0, details: {} };
+
+    // Direct hash comparison (for exact matches)
+    if (fp1.fingerprint_hash === fp2.fingerprint_hash) {
+        return { isMatch: true, confidence: 1.0, details: { reason: 'exact_hash_match' } };
+    }
+
+    // Component-wise comparison with tolerances
+    const canvasMatch = fp1.canvas_fingerprint?.hash === fp2.canvas_fingerprint?.hash;
+    const webglMatch = fp1.webgl_fingerprint?.hash === fp2.webgl_fingerprint?.hash;
+    const audioMatch = fp1.audio_fingerprint?.hash === fp2.audio_fingerprint?.hash;
+
+    // Browser attributes comparison
+    const browserSimilarity = calculateBrowserSimilarity(fp1.browser_info, fp2.browser_info);
+
+    // Hardware comparison with tolerance
+    const hardwareSimilarity = calculateHardwareSimilarity(fp1.hardware_profile, fp2.hardware_profile);
+
+    // Calculate weighted confidence score
+    const weights = {
+        canvas: 0.25,
+        webgl: 0.25,
+        audio: 0.20,
+        hardware: 0.20,
+        browser: 0.10
+    };
+
+    const confidence =
+        (canvasMatch ? weights.canvas : 0) +
+        (webglMatch ? weights.webgl : 0) +
+        (audioMatch ? weights.audio : 0) +
+        (hardwareSimilarity * weights.hardware) +
+        (browserSimilarity * weights.browser);
+
+    // Device is considered the same if confidence > 0.85
+    const isMatch = confidence > 0.85;
+
+    return {
+        isMatch,
+        confidence: Math.round(confidence * 100) / 100,
+        details: {
+            canvas: canvasMatch,
+            webgl: webglMatch,
+            audio: audioMatch,
+            hardware: Math.round(hardwareSimilarity * 100) / 100,
+            browser: Math.round(browserSimilarity * 100) / 100,
+            threshold: 0.85
+        }
+    };
+}
+
+// New endpoint for intelligent fingerprint comparison
+app.post('/api/compare-fingerprints', (req, res) => {
+    const { fingerprint1, fingerprint2 } = req.body;
+
+    if (!fingerprint1 || !fingerprint2) {
+        return res.status(400).json({
+            success: false,
+            error: 'Two fingerprints required for comparison'
+        });
+    }
+
+    const comparison = compareFingerprints(fingerprint1, fingerprint2);
+
+    res.json({
+        success: true,
+        ...comparison
+    });
+});
 
 
 // Endpoint to get detailed statistics with entropy calculation
