@@ -33,6 +33,8 @@ Cargo.lock
 .env
 .env.local
 .env.*.local
+# Allow .env.production for deployment documentation
+!.env.production
 
 # IDE
 .vscode/

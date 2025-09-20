@@ -10,7 +10,8 @@
     "start": "node server.js",
     "dev": "npm run build && npm start",
     "clean": "rm -rf public/pkg database/fingerprints.db data/fingerprints.log",
-    "prebuild": "mkdir -p public/pkg"
+    "prebuild": "mkdir -p public/pkg",
+    "deploy:heroku": "scripts/deploy-heroku.sh"
   },
   "keywords": [],
   "author": "",
