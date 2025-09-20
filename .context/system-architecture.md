@@ -389,7 +389,211 @@ wasm-finger/
 │   └── 📄 database.js      # Abstração SQLite
 ├── 📁 config/              # Configurações
 │   └── 📄 index.js         # Config centralizada
+├── 📁 scripts/             # Scripts de automação
+│   └── 📄 deploy-heroku.sh # Deploy automatizado
 ├── 📁 data/                # Backup em arquivos
 ├── 📄 server.js            # Servidor Express
+├── 📄 .env.production      # Variáveis produção
+├── 📄 Procfile             # Config Heroku
+├── 📄 app.json             # Heroku app config
 └── 📄 package.json         # Dependências Node.js
 ```
+
+## Sistema de Comparação Inteligente
+
+### Algoritmo de Tolerância para Hardware Benchmarks
+
+O sistema implementa um algoritmo avançado de comparação que considera as variações naturais nos benchmarks de hardware:
+
+```mermaid
+flowchart TD
+    START[🔄 Comparar Fingerprints] --> RECEIVE[📥 Receber FP1 e FP2]
+    RECEIVE --> VALIDATE[✅ Validar estrutura]
+    VALIDATE --> EXACT_COMPARE[🎯 Comparação Exata]
+
+    subgraph "Comparação Exata (100% precisão)"
+        EXACT_COMPARE --> CANVAS_CMP[🎨 Canvas Hash]
+        EXACT_COMPARE --> WEBGL_CMP[🎮 WebGL Hash]
+        EXACT_COMPARE --> AUDIO_CMP[🔊 Audio Hash]
+        EXACT_COMPARE --> BROWSER_CMP[🌐 Browser Info]
+    end
+
+    subgraph "Comparação com Tolerância (15%)"
+        EXACT_COMPARE --> HARDWARE_CMP[💻 Hardware Benchmarks]
+        HARDWARE_CMP --> THRESHOLD[🎚️ Aplicar Threshold 15%]
+        THRESHOLD --> MATH_TOL[➕ Math Operations]
+        THRESHOLD --> MEMORY_TOL[💾 Memory Benchmark]
+        THRESHOLD --> CRYPTO_TOL[🔐 Crypto Benchmark]
+        THRESHOLD --> CPU_TOL[⚡ CPU Performance]
+    end
+
+    CANVAS_CMP --> WEIGHTED[⚖️ Score Ponderado]
+    WEBGL_CMP --> WEIGHTED
+    AUDIO_CMP --> WEIGHTED
+    BROWSER_CMP --> WEIGHTED
+    MATH_TOL --> WEIGHTED
+    MEMORY_TOL --> WEIGHTED
+    CRYPTO_TOL --> WEIGHTED
+    CPU_TOL --> WEIGHTED
+
+    WEIGHTED --> CONFIDENCE[📊 Calcular Confiança]
+    CONFIDENCE --> DECISION{🤔 Mesmo Device?}
+
+    DECISION -->|Confiança > 80%| MATCH[✅ Dispositivos Idênticos]
+    DECISION -->|Confiança 50-80%| SIMILAR[⚠️ Dispositivos Similares]
+    DECISION -->|Confiança < 50%| DIFFERENT[❌ Dispositivos Diferentes]
+
+    MATCH --> RESPONSE[📤 Retornar Resultado]
+    SIMILAR --> RESPONSE
+    DIFFERENT --> RESPONSE
+
+    classDef exact fill:#e3f2fd,stroke:#1976d2
+    classDef tolerance fill:#fff3e0,stroke:#f57c00
+    classDef result fill:#e8f5e9,stroke:#388e3c
+    classDef decision fill:#fce4ec,stroke:#c2185b
+
+    class CANVAS_CMP,WEBGL_CMP,AUDIO_CMP,BROWSER_CMP exact
+    class HARDWARE_CMP,THRESHOLD,MATH_TOL,MEMORY_TOL,CRYPTO_TOL,CPU_TOL tolerance
+    class MATCH,SIMILAR,DIFFERENT,RESPONSE result
+    class DECISION decision
+```
+
+### Endpoint de Comparação Inteligente
+
+**POST /api/compare-fingerprints**
+
+```json
+{
+  "fingerprint1": { /* dados do primeiro fingerprint */ },
+  "fingerprint2": { /* dados do segundo fingerprint */ }
+}
+```
+
+**Resposta:**
+```json
+{
+  "success": true,
+  "isMatch": true,
+  "confidence": 92.5,
+  "details": {
+    "canvas": { "match": true, "score": 1.0 },
+    "webgl": { "match": true, "score": 1.0 },
+    "audio": { "match": true, "score": 1.0 },
+    "browser": { "match": true, "score": 1.0 },
+    "hardware": {
+      "math_operations": { "match": true, "score": 0.87 },
+      "memory_benchmark": { "match": true, "score": 0.91 },
+      "crypto_benchmark": { "match": true, "score": 0.94 }
+    }
+  }
+}
+```
+
+## Deployment e DevOps
+
+### Pipeline de Deploy no Heroku
+
+```mermaid
+flowchart LR
+    subgraph "Desenvolvimento Local"
+        DEV[👨‍💻 Desenvolvimento] --> BUILD[🔨 Build WASM]
+        BUILD --> TEST[🧪 Testes Locais]
+    end
+
+    subgraph "Controle de Versão"
+        TEST --> GIT[📝 Git Commit]
+        GIT --> PUSH[⬆️ Git Push]
+    end
+
+    subgraph "Heroku Deployment"
+        PUSH --> HEROKU_BUILD[🏗️ Heroku Build]
+        HEROKU_BUILD --> ENV_CONFIG[⚙️ Configurar ENV]
+        ENV_CONFIG --> WASM_SKIP[⏭️ Skip WASM Build]
+        WASM_SKIP --> NODE_BUILD[📦 Build Node.js]
+        NODE_BUILD --> DEPLOY[🚀 Deploy App]
+    end
+
+    subgraph "Produção"
+        DEPLOY --> HEALTH[💓 Health Check]
+        HEALTH --> LIVE[✅ App Live]
+    end
+
+    classDef dev fill:#e1f5fe,stroke:#01579b
+    classDef git fill:#f3e5f5,stroke:#4a148c
+    classDef heroku fill:#fff3e0,stroke:#e65100
+    classDef prod fill:#e8f5e9,stroke:#2e7d32
+
+    class DEV,BUILD,TEST dev
+    class GIT,PUSH git
+    class HEROKU_BUILD,ENV_CONFIG,WASM_SKIP,NODE_BUILD,DEPLOY heroku
+    class HEALTH,LIVE prod
+```
+
+### Configuração de Ambiente
+
+**Arquivos de Configuração:**
+- `.env.production` - Documentação completa das variáveis
+- `Procfile` - Configuração de processo Heroku
+- `app.json` - Metadata da aplicação
+- `scripts/deploy-heroku.sh` - Script automatizado de deploy
+
+**Comandos de Deploy:**
+```bash
+# Deploy automático
+npm run deploy:heroku
+
+# Deploy manual
+heroku config:set $(grep -v '^#' .env.production | grep -v '^$' | tr '\n' ' ')
+git push heroku main
+```
+
+## Correções e Melhorias Recentes
+
+### ✅ Bug Fixes Implementados
+
+1. **Compare Sessions Button Fix**
+   - Problema: `event.target` undefined em chamadas programáticas
+   - Solução: Parâmetro opcional `targetElement` na função `switchTab()`
+   - Status: ✅ Resolvido
+
+2. **Heroku Deployment Issues**
+   - Problema: H20 "App boot timeout"
+   - Causa: Server binding em `localhost` instead de `0.0.0.0`
+   - Solução: Configuração dinâmica de host baseada em `NODE_ENV`
+   - Status: ✅ Resolvido
+
+3. **WASM Build na Produção**
+   - Problema: `wasm-pack` não disponível no Heroku
+   - Solução: Pre-built WASM files incluídos no repositório
+   - Script: `build:wasm:heroku` que pula compilação
+   - Status: ✅ Resolvido
+
+4. **Session Recognition Issue**
+   - Problema: Mesmas sessões detectadas como diferentes
+   - Causa: Variações naturais em hardware benchmarks
+   - Solução: Sistema de tolerância de 15% para benchmarks
+   - Status: ✅ Resolvido
+
+### 🚀 Melhorias de Performance
+
+1. **Intelligent Comparison System**
+   - Endpoint `/api/compare-fingerprints` com análise detalhada
+   - Scoring ponderado com diferentes pesos por componente
+   - Níveis de confiança: Idêntico (>80%), Similar (50-80%), Diferente (<50%)
+
+2. **Database Optimization**
+   - Schema normalizado com 8 tabelas relacionadas
+   - Índices para queries frequentes
+   - Foreign keys para integridade referencial
+
+3. **Configuration Management**
+   - Sistema centralizado em `config/index.js`
+   - Feature flags para desenvolvimento/produção
+   - Validação automática de configuração
+
+### 📊 Analytics e Monitoramento
+
+- Health check endpoint: `/health`
+- Estatísticas em tempo real: `/api/stats`
+- Logging estruturado em JSON
+- Métricas de performance dos benchmarks
