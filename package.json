@@ -9,7 +9,7 @@
     "heroku-postbuild": "npm run build:wasm:heroku",
     "start": "node server.js",
     "dev": "npm run build && npm start",
-    "clean": "rm -rf public/pkg database/fingerprints.db data/fingerprints.log",
+    "clean": "rm -rf public/pkg data/fingerprints.log",
     "prebuild": "mkdir -p public/pkg",
     "deploy:heroku": "scripts/deploy-heroku.sh"
   },
@@ -21,8 +21,7 @@
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "sqlite3": "^5.1.7"
+    "express": "^5.1.0"
   },
   "engines": {
     "node": ">=18.0.0",
