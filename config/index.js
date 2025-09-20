@@ -27,7 +27,7 @@ const config = {
     server: {
         nodeEnv: getEnv('NODE_ENV', 'development'),
         port: parseInt(process.env.PORT, 3000),
-        host: getEnv('HOST', 'localhost'),
+        host: getEnv('HOST', process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'),
         isProduction: process.env.NODE_ENV === 'production',
         isDevelopment: process.env.NODE_ENV !== 'production',
     },
