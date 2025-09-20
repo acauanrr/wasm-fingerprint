@@ -172,7 +172,7 @@
     </style>
 </head>
 <body>
-    <button class="back-btn" onclick="window.close()">← Voltar</button>
+    <button class="back-btn" onclick="if(document.referrer){window.history.back()}else{window.location.href='/'}">← Voltar</button>
 
     <div class="container">
         <div class="header">
