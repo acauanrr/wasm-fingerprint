@@ -1,0 +1,71 @@
+[package]
+name = "wasm-fingerprint"
+version = "0.1.0"
+authors = ["Research Team"]
+edition = "2021"
+description = "Advanced browser fingerprinting using WebAssembly"
+license = "MIT"
+repository = "https://github.com/yourusername/wasm-fingerprint"
+
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { version = "0.2.103", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3.80"
+serde = { version = "1.0.225", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+getrandom = { version = "0.2", features = ["js"] }
+
+[dependencies.web-sys]
+version = "0.3.80"
+features = [
+  # Core DOM
+  "console",
+  "Document",
+  "Element",
+  "Window",
+  "Navigator",
+  "Performance",
+  "Screen",
+
+  # Canvas API
+  "HtmlCanvasElement",
+  "CanvasRenderingContext2d",
+
+  # WebGL API
+  "WebGlRenderingContext",
+  "WebGl2RenderingContext",
+  "WebGlProgram",
+  "WebGlShader",
+  "WebGlBuffer",
+  "WebGlShaderPrecisionFormat",
+
+  # Audio API
+  "AudioBuffer",
+  "AudioDestinationNode",
+  "OscillatorNode",
+  "OscillatorType",
+  "AudioParam",
+  "OfflineAudioContext",
+  "DynamicsCompressorNode",
+
+  # Network API
+  "Headers",
+  "Request",
+  "RequestInit",
+  "Response",
+]
+
+[profile.release]
+opt-level = "z"     # Optimize for size
+lto = true          # Link-time optimization
+codegen-units = 1   # Single codegen unit for better optimization
+strip = true        # Strip symbols for smaller size
+
+# Enable atomic operations for WASM
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }

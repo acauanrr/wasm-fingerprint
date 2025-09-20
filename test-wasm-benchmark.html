@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>WASM Port Contention Benchmark Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #00ff41;
+        }
+        h1, h2 {
+            color: #00ff41;
+            text-shadow: 0 0 10px #00ff41;
+        }
+        .section {
+            background: #1a1a1a;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #00ff41;
+            border-radius: 5px;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 3px;
+            border: 1px solid #00ff41;
+        }
+        .benchmark-result {
+            margin: 10px 0;
+            padding: 10px;
+            background: #0d0d0d;
+            border-left: 3px solid #00ff41;
+        }
+        .ratio-high {
+            color: #ff0;
+            font-weight: bold;
+        }
+        .ratio-neutral {
+            color: #0ff;
+        }
+        .ratio-low {
+            color: #f0f;
+        }
+        button {
+            background: #00ff41;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        button:hover {
+            background: #00cc33;
+            box-shadow: 0 0 10px #00ff41;
+        }
+        .loading {
+            color: #ffff00;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        .fingerprint {
+            background: #000;
+            padding: 15px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 12px;
+            border: 2px solid #00ff41;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 WASM Port Contention Benchmark - Seção 4.2</h1>
+
+    <div class="section">
+        <h2>Implementação do Benchmark em WASM</h2>
+        <p>
+            Esta página demonstra a implementação exata descrita na Seção 4.2,
+            usando instruções WASM específicas para induzir contenção de portas.
+        </p>
+        <p>
+            Pares de instruções testados:
+        </p>
+        <ul>
+            <li><strong>POPCNT vs OR</strong> - i64.popcnt vs i64.or (exemplo do artigo)</li>
+            <li><strong>CLZ vs AND</strong> - i64.clz vs i64.and</li>
+            <li><strong>CTZ vs XOR</strong> - i64.ctz vs i64.xor</li>
+            <li><strong>ROTL vs SHL</strong> - i64.rotl vs i64.shl</li>
+            <li><strong>MUL vs ADD</strong> - i64.mul vs i64.add</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Controles</h2>
+        <button onclick="runSingleBenchmark('popcnt_or')">Test POPCNT/OR</button>
+        <button onclick="runSingleBenchmark('clz_and')">Test CLZ/AND</button>
+        <button onclick="runSingleBenchmark('ctz_xor')">Test CTZ/XOR</button>
+        <button onclick="runSingleBenchmark('rotl_shl')">Test ROTL/SHL</button>
+        <button onclick="runSingleBenchmark('mul_add')">Test MUL/ADD</button>
+        <br><br>
+        <button onclick="runAllBenchmarks()">Run All Benchmarks</button>
+        <button onclick="generateFingerprint()">Generate Fingerprint</button>
+    </div>
+
+    <div id="status" class="section">
+        <h2>Status</h2>
+        <p id="status-text">Pronto para executar benchmarks.</p>
+    </div>
+
+    <div id="results" class="section" style="display: none;">
+        <h2>Resultados</h2>
+        <pre id="results-text"></pre>
+    </div>
+
+    <div id="fingerprint-section" class="section" style="display: none;">
+        <h2>Fingerprint Microarquitetural</h2>
+        <div class="fingerprint" id="fingerprint-text"></div>
+    </div>
+
+    <script type="module">
+        import init, {
+            grouped_execution_popcnt_or,
+            interleaved_execution_popcnt_or,
+            grouped_execution_clz_and,
+            interleaved_execution_clz_and,
+            grouped_execution_ctz_xor,
+            interleaved_execution_ctz_xor,
+            grouped_execution_rotl_shl,
+            interleaved_execution_rotl_shl,
+            grouped_execution_mul_add,
+            interleaved_execution_mul_add,
+            measure_wasm_port_contention,
+            run_all_wasm_benchmarks,
+            generate_wasm_fingerprint
+        } from './wasm-fingerprint/pkg/wasm_fingerprint.js';
+
+        let wasmInitialized = false;
+
+        async function initWasm() {
+            if (!wasmInitialized) {
+                updateStatus('Inicializando módulo WASM...', true);
+                await init();
+                wasmInitialized = true;
+                updateStatus('Módulo WASM inicializado.');
+            }
+        }
+
+        function updateStatus(message, loading = false) {
+            const statusText = document.getElementById('status-text');
+            statusText.textContent = message;
+            statusText.className = loading ? 'loading' : '';
+        }
+
+        function showResults(text) {
+            const resultsDiv = document.getElementById('results');
+            const resultsText = document.getElementById('results-text');
+            resultsText.textContent = text;
+            resultsDiv.style.display = 'block';
+        }
+
+        window.runSingleBenchmark = async function(pairName) {
+            await initWasm();
+            updateStatus(`Executando benchmark: ${pairName}...`, true);
+
+            try {
+                const iterations = 100000;
+
+                // Executar benchmark direto
+                console.time(`Benchmark ${pairName}`);
+
+                let groupedResult, interleavedResult;
+                const startGrouped = performance.now();
+
+                switch(pairName) {
+                    case 'popcnt_or':
+                        groupedResult = grouped_execution_popcnt_or(iterations);
+                        break;
+                    case 'clz_and':
+                        groupedResult = grouped_execution_clz_and(iterations);
+                        break;
+                    case 'ctz_xor':
+                        groupedResult = grouped_execution_ctz_xor(iterations);
+                        break;
+                    case 'rotl_shl':
+                        groupedResult = grouped_execution_rotl_shl(iterations);
+                        break;
+                    case 'mul_add':
+                        groupedResult = grouped_execution_mul_add(iterations);
+                        break;
+                }
+
+                const groupedTime = performance.now() - startGrouped;
+
+                const startInterleaved = performance.now();
+
+                switch(pairName) {
+                    case 'popcnt_or':
+                        interleavedResult = interleaved_execution_popcnt_or(iterations);
+                        break;
+                    case 'clz_and':
+                        interleavedResult = interleaved_execution_clz_and(iterations);
+                        break;
+                    case 'ctz_xor':
+                        interleavedResult = interleaved_execution_ctz_xor(iterations);
+                        break;
+                    case 'rotl_shl':
+                        interleavedResult = interleaved_execution_rotl_shl(iterations);
+                        break;
+                    case 'mul_add':
+                        interleavedResult = interleaved_execution_mul_add(iterations);
+                        break;
+                }
+
+                const interleavedTime = performance.now() - startInterleaved;
+
+                console.timeEnd(`Benchmark ${pairName}`);
+
+                const ratio = interleavedTime / groupedTime;
+
+                let ratioClass = 'ratio-neutral';
+                let interpretation = 'No significant contention';
+
+                if (ratio > 1.15) {
+                    ratioClass = 'ratio-high';
+                    interpretation = 'High parallelism detected (different execution ports)';
+                } else if (ratio < 0.85) {
+                    ratioClass = 'ratio-low';
+                    interpretation = 'Grouped execution faster (cache benefits)';
+                }
+
+                const result = `
+Benchmark: ${pairName.toUpperCase()}
+================================
+Iterations: ${iterations}
+
+Execution Times:
+  Grouped:     ${groupedTime.toFixed(3)} ms
+  Interleaved: ${interleavedTime.toFixed(3)} ms
+
+Ratio (ρ = interleaved/grouped): ${ratio.toFixed(4)}
+
+Interpretation: ${interpretation}
+
+Raw Results:
+  Grouped result:     ${groupedResult}
+  Interleaved result: ${interleavedResult}
+`;
+
+                showResults(result);
+                updateStatus(`Benchmark ${pairName} concluído. Ratio: ${ratio.toFixed(4)}`);
+
+            } catch (e) {
+                updateStatus(`Erro: ${e}`);
+                console.error(e);
+            }
+        };
+
+        window.runAllBenchmarks = async function() {
+            await initWasm();
+            updateStatus('Executando todos os benchmarks...', true);
+
+            try {
+                const results = await run_all_wasm_benchmarks();
+                showResults(results);
+                updateStatus('Todos os benchmarks concluídos.');
+            } catch (e) {
+                updateStatus(`Erro: ${e}`);
+                console.error(e);
+            }
+        };
+
+        window.generateFingerprint = async function() {
+            await initWasm();
+            updateStatus('Gerando fingerprint microarquitetural...', true);
+
+            try {
+                const fingerprint = await generate_wasm_fingerprint();
+
+                const fpSection = document.getElementById('fingerprint-section');
+                const fpText = document.getElementById('fingerprint-text');
+
+                fpText.textContent = `SHA-256: ${fingerprint}`;
+                fpSection.style.display = 'block';
+
+                updateStatus('Fingerprint gerado com sucesso.');
+
+                // Log para debug
+                console.log('WASM Microarchitectural Fingerprint:', fingerprint);
+
+            } catch (e) {
+                updateStatus(`Erro: ${e}`);
+                console.error(e);
+            }
+        };
+
+        // Auto-inicializar
+        initWasm();
+    </script>
+</body>
+</html>

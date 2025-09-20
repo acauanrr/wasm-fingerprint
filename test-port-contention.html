@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Port Contention Fingerprint Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #4a9eff;
+        }
+        h2 {
+            color: #6ab7ff;
+        }
+        .result-box {
+            background: #2d2d2d;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4a9eff;
+        }
+        .fingerprint {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+        pre {
+            background: #1a1a1a;
+            padding: 10px;
+            overflow-x: auto;
+            border-radius: 3px;
+        }
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+        .status.success { background: #2e7d32; }
+        .status.error { background: #c62828; }
+        .status.running { background: #f57c00; }
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 Port Contention Microarchitectural Fingerprinting</h1>
+
+    <div class="result-box">
+        <h2>Teoria da Contenção Sequencial de Portas</h2>
+        <p>
+            Esta técnica explora as diferenças no agendamento de instruções entre diferentes CPUs.
+            Medimos o tempo de execução de instruções em dois modos:
+        </p>
+        <ul>
+            <li><strong>Agrupado (AAAA...BBBB...):</strong> Todas as instruções A, depois todas as B</li>
+            <li><strong>Intercalado (ABAB...):</strong> Instruções A e B alternadas</li>
+        </ul>
+        <p>
+            A razão ρ = tempo(intercalado) / tempo(agrupado) revela características únicas da CPU:
+        </p>
+        <ul>
+            <li>ρ > 1.15: Alta paralelização (portas diferentes)</li>
+            <li>0.85 < ρ < 1.15: Sem contenção significativa</li>
+            <li>ρ < 0.85: Execução agrupada mais rápida (cache locality)</li>
+        </ul>
+    </div>
+
+    <div id="status" class="result-box">
+        <h2>Status</h2>
+        <p class="loading">Carregando módulo WASM...</p>
+    </div>
+
+    <div id="results" style="display: none;">
+        <div class="result-box">
+            <h2>Análise Detalhada</h2>
+            <pre id="detailed-analysis"></pre>
+        </div>
+
+        <div class="result-box">
+            <h2>Fingerprint Microarquitetural</h2>
+            <div class="fingerprint" id="fingerprint-hash"></div>
+        </div>
+
+        <div class="result-box">
+            <h2>Fingerprint Completo do Sistema</h2>
+            <pre id="complete-fingerprint"></pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, {
+            FingerprintCollector,
+            get_port_contention_fingerprint,
+            get_port_contention_detailed
+        } from './wasm-fingerprint/pkg/wasm_fingerprint.js';
+
+        async function runPortContentionTest() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+
+            try {
+                // Initialize WASM module
+                statusDiv.innerHTML = '<h2>Status</h2><p class="loading">Inicializando módulo WASM...</p>';
+                await init();
+
+                // Run port contention analysis
+                statusDiv.innerHTML = '<h2>Status</h2><p class="loading">Executando análise de contenção de portas...</p>';
+
+                console.time('Port Contention Analysis');
+
+                // Get detailed analysis
+                const detailedAnalysis = await get_port_contention_detailed();
+                document.getElementById('detailed-analysis').textContent = detailedAnalysis;
+
+                // Get fingerprint hash
+                const fingerprintHash = await get_port_contention_fingerprint();
+                document.getElementById('fingerprint-hash').textContent =
+                    `SHA-256: ${fingerprintHash}`;
+
+                console.timeEnd('Port Contention Analysis');
+
+                // Run complete fingerprint collection
+                statusDiv.innerHTML = '<h2>Status</h2><p class="loading">Coletando fingerprint completo do sistema...</p>';
+
+                const collector = new FingerprintCollector();
+                const fullFingerprint = await collector.collect_fingerprint();
+                const data = JSON.parse(fullFingerprint);
+
+                // Display complete fingerprint
+                document.getElementById('complete-fingerprint').textContent =
+                    JSON.stringify(data, null, 2);
+
+                // Show results
+                statusDiv.innerHTML = '<h2>Status</h2><p>Análise concluída! <span class="status success">✅ Sucesso</span></p>';
+                resultsDiv.style.display = 'block';
+
+                // Log to console for debugging
+                console.log('Port Contention Fingerprint:', fingerprintHash);
+                console.log('Detailed Analysis:', detailedAnalysis);
+                console.log('Complete System Fingerprint:', data);
+
+            } catch (e) {
+                statusDiv.innerHTML = `<h2>Status</h2><p>Erro: ${e} <span class="status error">❌ Falhou</span></p>`;
+                console.error('Error during port contention test:', e);
+            }
+        }
+
+        // Run test when page loads
+        runPortContentionTest();
+    </script>
+</body>
+</html>

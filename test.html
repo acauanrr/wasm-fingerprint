@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>WASM Fingerprint Test</title>
+</head>
+<body>
+    <h1>Browser Fingerprint Test</h1>
+    <div id="results">
+        <p>Loading WASM module...</p>
+    </div>
+
+    <script type="module">
+        import init, {
+            FingerprintCollector,
+            get_canvas_fingerprint,
+            get_webgl_fingerprint,
+            get_audio_fingerprint,
+            get_audio_fingerprint_hash,
+            log_window_details
+        } from './wasm-fingerprint/pkg/wasm_fingerprint.js';
+
+        async function runTest() {
+            const resultsDiv = document.getElementById('results');
+
+            try {
+                // Initialize WASM module
+                await init();
+                resultsDiv.innerHTML = '<h2>Test Results:</h2>';
+
+                // Test individual functions
+                resultsDiv.innerHTML += '<h3>Individual Functions:</h3>';
+
+                // Canvas fingerprint
+                try {
+                    const canvas_fp = get_canvas_fingerprint();
+                    resultsDiv.innerHTML += `<p>✅ Canvas Fingerprint: ${canvas_fp.substring(0, 32)}...</p>`;
+                } catch (e) {
+                    resultsDiv.innerHTML += `<p>❌ Canvas Error: ${e}</p>`;
+                }
+
+                // WebGL fingerprint
+                try {
+                    const webgl_fp = get_webgl_fingerprint();
+                    resultsDiv.innerHTML += `<p>✅ WebGL Fingerprint: ${webgl_fp.substring(0, 32)}...</p>`;
+                } catch (e) {
+                    resultsDiv.innerHTML += `<p>❌ WebGL Error: ${e}</p>`;
+                }
+
+                // Audio fingerprint
+                try {
+                    const audio_fp = await get_audio_fingerprint();
+                    resultsDiv.innerHTML += `<p>✅ Audio Fingerprint (value): ${audio_fp}</p>`;
+
+                    const audio_hash = await get_audio_fingerprint_hash();
+                    resultsDiv.innerHTML += `<p>✅ Audio Fingerprint (hash): ${audio_hash.substring(0, 32)}...</p>`;
+                } catch (e) {
+                    resultsDiv.innerHTML += `<p>❌ Audio Error: ${e}</p>`;
+                }
+
+                // Test FingerprintCollector
+                resultsDiv.innerHTML += '<h3>Full Collector:</h3>';
+                try {
+                    const collector = new FingerprintCollector();
+                    const fullFingerprint = await collector.collect_fingerprint();
+                    const data = JSON.parse(fullFingerprint);
+
+                    resultsDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    resultsDiv.innerHTML += `<p>✅ Complete fingerprint collected successfully!</p>`;
+                } catch (e) {
+                    resultsDiv.innerHTML += `<p>❌ Collector Error: ${e}</p>`;
+                }
+
+                // Log window details
+                log_window_details();
+
+            } catch (e) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error loading WASM module: ${e}</p>`;
+                console.error(e);
+            }
+        }
+
+        runTest();
+    </script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Browser Fingerprinting with WebAssembly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .status {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status.loading {
+            border-left-color: #ffc107;
+        }
+
+        .status.success {
+            border-left-color: #28a745;
+        }
+
+        .status.error {
+            border-left-color: #dc3545;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .result-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .result-value {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-size: 0.9em;
+            word-break: break-all;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .progress {
+            width: 100%;
+            height: 30px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 15px;
+            width: 0;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .hardware-profile {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .hw-metric {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .hw-metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .hw-metric-label {
+            color: #666;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Advanced Browser Fingerprinting</h1>
+        <p class="subtitle">WebAssembly-powered device identification system</p>
+
+        <div class="warning">
+            ⚠️ <strong>Research Demo:</strong> This is an academic demonstration of browser fingerprinting techniques using WebAssembly for privacy research. No data is stored permanently.
+        </div>
+
+        <div id="status" class="status">
+            Ready to collect fingerprint data
+        </div>
+
+        <div class="progress" id="progress" style="display: none;">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+
+        <div class="button-group">
+            <button id="collectBtn" class="btn" onclick="collectFingerprint()">
+                Start Fingerprint Collection
+            </button>
+            <button id="compareBtn" class="btn" onclick="compareSessions()" style="display: none;">
+                Compare with Previous Session
+            </button>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('overview')">Overview</button>
+                <button class="tab" onclick="switchTab('hardware')">Hardware Profile</button>
+                <button class="tab" onclick="switchTab('apis')">API Fingerprints</button>
+                <button class="tab" onclick="switchTab('raw')">Raw Data</button>
+            </div>
+
+            <div id="overview" class="tab-content active">
+                <div class="result-item">
+                    <span class="result-label">Composite Fingerprint ID:</span>
+                    <span class="result-value" id="fingerprintId">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Session ID:</span>
+                    <span class="result-value" id="sessionId">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Collection Time:</span>
+                    <span class="result-value" id="collectionTime">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Returning User:</span>
+                    <span class="result-value" id="returningUser">-</span>
+                </div>
+            </div>
+
+            <div id="hardware" class="tab-content">
+                <div class="hardware-profile" id="hardwareProfile"></div>
+            </div>
+
+            <div id="apis" class="tab-content">
+                <div class="result-item">
+                    <span class="result-label">Canvas Hash:</span>
+                    <span class="result-value" id="canvasHash">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">WebGL Hash:</span>
+                    <span class="result-value" id="webglHash">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Audio Hash:</span>
+                    <span class="result-value" id="audioHash">-</span>
+                </div>
+            </div>
+
+            <div id="raw" class="tab-content">
+                <pre id="rawData"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { FingerprintCollector } from '/wasm/wasm_fingerprint.js';
+
+        let wasmModule = null;
+        let currentFingerprint = null;
+        let previousFingerprint = null;
+
+        async function initWasm() {
+            try {
+                await init();
+                wasmModule = true;
+                updateStatus('WebAssembly module loaded successfully', 'success');
+            } catch (error) {
+                console.error('Failed to initialize WASM:', error);
+                updateStatus('Failed to load WebAssembly module: ' + error.message, 'error');
+            }
+        }
+
+        window.collectFingerprint = async function() {
+            if (!wasmModule) {
+                updateStatus('WebAssembly module not loaded yet', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('collectBtn');
+            btn.disabled = true;
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('progress').style.display = 'block';
+
+            try {
+                updateStatus('Initializing fingerprint collector...', 'loading');
+                updateProgress(10);
+
+                const collector = new FingerprintCollector();
+
+                updateStatus('Collecting fingerprint data...', 'loading');
+                updateProgress(30);
+
+                const startTime = performance.now();
+                const fingerprintJson = await collector.collect_fingerprint();
+                const endTime = performance.now();
+                const collectionTime = (endTime - startTime).toFixed(2);
+
+                updateProgress(70);
+                currentFingerprint = JSON.parse(fingerprintJson);
+
+                updateStatus('Sending to server...', 'loading');
+                updateProgress(85);
+
+                // Send to server
+                const response = await fetch('/api/fingerprint', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: fingerprintJson
+                });
+
+                const result = await response.json();
+                updateProgress(100);
+
+                // Display results
+                displayResults(currentFingerprint, result, collectionTime);
+
+                updateStatus('Fingerprint collection complete!', 'success');
+
+                // Save for comparison
+                if (!previousFingerprint && currentFingerprint) {
+                    previousFingerprint = currentFingerprint;
+                    document.getElementById('compareBtn').style.display = 'inline-block';
+                }
+
+            } catch (error) {
+                console.error('Error collecting fingerprint:', error);
+                updateStatus('Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => {
+                    document.getElementById('progress').style.display = 'none';
+                    document.getElementById('progressBar').style.width = '0%';
+                }, 1000);
+            }
+        };
+
+        window.compareSessions = async function() {
+            if (!currentFingerprint || !previousFingerprint) {
+                updateStatus('Need to collect fingerprint first', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/compare', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fingerprint1: currentFingerprint,
+                        fingerprint2: previousFingerprint
+                    })
+                });
+
+                const result = await response.json();
+
+                alert(`Similarity Score: ${(result.similarity.overall * 100).toFixed(2)}%\n` +
+                      `Canvas: ${(result.similarity.canvas * 100).toFixed(0)}%\n` +
+                      `WebGL: ${(result.similarity.webgl * 100).toFixed(0)}%\n` +
+                      `Audio: ${(result.similarity.audio * 100).toFixed(0)}%\n` +
+                      `Hardware: ${(result.similarity.hardware * 100).toFixed(0)}%\n` +
+                      `Browser: ${(result.similarity.browser * 100).toFixed(0)}%\n\n` +
+                      `Match: ${result.isLikelyMatch ? 'Yes' : 'No'}`);
+
+            } catch (error) {
+                console.error('Error comparing fingerprints:', error);
+                updateStatus('Error comparing fingerprints', 'error');
+            }
+        };
+
+        function displayResults(fingerprint, serverResult, collectionTime) {
+            document.getElementById('results').style.display = 'block';
+
+            // Overview
+            document.getElementById('fingerprintId').textContent =
+                serverResult.fingerprintId.substring(0, 16) + '...';
+            document.getElementById('sessionId').textContent =
+                serverResult.sessionId.substring(0, 16) + '...';
+            document.getElementById('collectionTime').textContent =
+                collectionTime + ' ms';
+            document.getElementById('returningUser').textContent =
+                serverResult.isReturningUser ? `Yes (${serverResult.sessionsCount} sessions)` : 'No';
+
+            // API Hashes
+            document.getElementById('canvasHash').textContent =
+                fingerprint.canvas_hash.substring(0, 32) + '...';
+            document.getElementById('webglHash').textContent =
+                fingerprint.webgl_hash.substring(0, 32) + '...';
+            document.getElementById('audioHash').textContent =
+                fingerprint.audio_hash.substring(0, 32) + '...';
+
+            // Hardware Profile
+            const hwProfile = fingerprint.hardware_profile;
+            const hwContainer = document.getElementById('hardwareProfile');
+            hwContainer.innerHTML = `
+                <div class="hw-metric">
+                    <div class="hw-metric-value">${hwProfile.cpu_benchmark.toFixed(2)}</div>
+                    <div class="hw-metric-label">CPU Benchmark (ms)</div>
+                </div>
+                <div class="hw-metric">
+                    <div class="hw-metric-value">${hwProfile.memory_benchmark.toFixed(2)}</div>
+                    <div class="hw-metric-label">Memory Benchmark (ms)</div>
+                </div>
+                <div class="hw-metric">
+                    <div class="hw-metric-value">${hwProfile.crypto_benchmark.toFixed(2)}</div>
+                    <div class="hw-metric-label">Crypto Benchmark (ms)</div>
+                </div>
+                <div class="hw-metric">
+                    <div class="hw-metric-value">${hwProfile.instruction_timing.length}</div>
+                    <div class="hw-metric-label">Timing Vectors</div>
+                </div>
+            `;
+
+            // Raw Data
+            document.getElementById('rawData').textContent =
+                JSON.stringify(fingerprint, null, 2);
+        }
+
+        window.switchTab = function(tabName) {
+            // Remove active class from all tabs and contents
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Add active class to selected tab and content
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        };
+
+        function updateStatus(message, type = '') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        function updateProgress(percent) {
+            const bar = document.getElementById('progressBar');
+            bar.style.width = percent + '%';
+            bar.textContent = percent + '%';
+        }
+
+        // Initialize on load
+        initWasm();
+    </script>
+</body>
+</html>
