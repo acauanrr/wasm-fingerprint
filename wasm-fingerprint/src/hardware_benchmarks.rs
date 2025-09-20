@@ -11,6 +11,10 @@ impl HardwareBenchmarks {
 
     pub fn run_all_benchmarks(&self) -> Result<HardwareProfile, JsValue> {
         Ok(HardwareProfile {
+            cores: 4, // Default, will be overridden
+            memory: 8.0, // Default, will be overridden
+            concurrency: 4, // Default, will be overridden
+            benchmarks: None, // Will be filled later
             cpu_benchmark: self.cpu_intensive_benchmark()?,
             memory_benchmark: self.memory_access_benchmark()?,
             crypto_benchmark: self.crypto_operations_benchmark()?,
@@ -27,7 +31,8 @@ impl HardwareBenchmarks {
         let mut result = 1.0f64;
         for i in 0..iterations {
             result = result * 1.000001 + (i as f64).sin();
-            result = result.sqrt() * 2.0 - 1.0;
+            // Ensure we never take sqrt of negative number
+            result = result.abs().sqrt() * 2.0 - 1.0;
             if i % 1000 == 0 {
                 result = result.abs();
             }

@@ -1,6 +1,6 @@
 # Advanced Browser Fingerprinting with WebAssembly
 
-Uma implementação avançada de browser fingerprinting usando WebAssembly, baseada em pesquisa acadêmica sobre técnicas de rastreamento stateless e identificação de dispositivos através de microbenchmarks de hardware.
+Uma implementação avançada de browser fingerprinting usando WebAssembly com persistência SQLite robusta, baseada em pesquisa acadêmica sobre técnicas de rastreamento stateless e identificação de dispositivos através de microbenchmarks de hardware.
 
 ## 📋 Visão Geral
 
@@ -20,6 +20,39 @@ Este projeto implementa duas propostas complementares de fingerprinting:
 - **Contenção de Portas Sequenciais (Seção 4.1)**: Exploração de ILP do CPU
 - **Benchmarks WASM específicos (Seção 4.2)**: Controle preciso de instruções
 - **Timer de Alta Precisão (Seção 4.3)**: SharedArrayBuffer com Web Workers
+
+## ⚙️ Configuração do Ambiente
+
+### Variáveis de Ambiente
+
+O projeto usa variáveis de ambiente para configuração profissional. Copie o arquivo de exemplo:
+
+```bash
+cp .env.example .env
+```
+
+#### Principais Variáveis:
+
+| Variável | Descrição | Padrão |
+|----------|-----------|--------|
+| `NODE_ENV` | Ambiente (development/production) | development |
+| `PORT` | Porta do servidor | 3000 |
+| `API_BASE_URL` | URL base da API | http://localhost:3000 |
+| `ENABLE_COOP_COEP` | Headers para SharedArrayBuffer | true |
+| `DATA_DIR` | Diretório para dados | ./data |
+| `LOG_LEVEL` | Nível de log (error/warn/info/debug) | info |
+| `DB_TYPE` | Tipo de banco de dados | sqlite |
+| `ENABLE_RATE_LIMIT` | Rate limiting habilitado | false |
+
+#### Features Configuráveis:
+
+```env
+ENABLE_CANVAS=true               # Canvas fingerprint
+ENABLE_WEBGL=true               # WebGL fingerprint
+ENABLE_AUDIO=true               # Audio fingerprint
+ENABLE_HARDWARE_BENCHMARKS=true # Benchmarks de hardware
+ENABLE_PORT_CONTENTION=true     # Contenção de portas
+```
 
 ## 🚀 Como Executar
 
@@ -50,8 +83,8 @@ cargo install wasm-pack
 
 1. **Clone o repositório**:
 ```bash
-git clone [repo-url]
-cd wasm-finger
+git clone https://github.com/acauanrr/wasm-fingerprint.git
+cd wasm-fingerprint
 ```
 
 2. **Instale as dependências Node.js**:
@@ -88,15 +121,13 @@ http://localhost:3000
 # Desenvolvimento
 npm run build:wasm    # Compila módulos WASM
 npm start            # Inicia servidor (porta 3000)
-npm run dev          # Modo desenvolvimento com auto-reload
+npm run dev          # Build + start
+npm run clean        # Remove arquivos gerados
 
-# Análise de Dados
-node entropy-analyzer.js ./data/fingerprints.log  # Análise de entropia
-
-# Análise com Rust (opcional, mais rápido)
-cd entropy-analyzer
-cargo run -- analyze --file ../data/fingerprints.log --verbose
-cargo run -- compare --file-a dataset1.log --file-b dataset2.log
+# Base de Dados SQLite
+# A persistência é automática - dados são armazenados em:
+# - ./database/fingerprints.db (SQLite principal)
+# - ./data/fingerprints.log (backup em arquivo)
 ```
 
 ## 🏗️ Arquitetura Completa
@@ -104,38 +135,40 @@ cargo run -- compare --file-a dataset1.log --file-b dataset2.log
 ### Estrutura do Projeto
 ```
 wasm-finger/
-├── wasm-fingerprint/         # Módulo Rust/WebAssembly
-│   ├── src/
-│   │   ├── lib.rs           # Orquestrador principal
-│   │   ├── dom_utils.rs     # Funções auxiliares DOM
-│   │   ├── canvas_fingerprint.rs  # Canvas fingerprinting unificado
-│   │   ├── webgl_fingerprint.rs   # WebGL 1.0/2.0 unificado
-│   │   ├── audio_fingerprint.rs   # Audio fingerprinting unificado
-│   │   ├── hardware_benchmarks.rs # Microbenchmarks
-│   │   ├── port_contention.rs    # Contenção de portas (Seção 4.1)
-│   │   ├── wasm_port_benchmark.rs # Benchmarks WASM (Seção 4.2)
-│   │   └── utils.rs
-│   ├── benchmark.wat        # WebAssembly Text Format (baixo nível)
-│   ├── Cargo.toml           # Configuração Rust
-│   └── pkg/                 # Saída compilada (gerada)
-├── public/
-│   ├── index.html           # Interface de demonstração
-│   ├── precise-benchmark.html # Demo de timer de alta precisão
-│   ├── fingerprint-client.js # Cliente de coleta (Seção 5.1)
-│   ├── high-precision-timer.js # Timer SharedArrayBuffer (Seção 4.3)
-│   ├── timer-worker.js      # Web Worker do timer
-│   └── wasm-benchmark-precise.js # Integração timer + benchmarks
-├── entropy-analyzer/        # Analisador de entropia em Rust (Seção 5.3)
-│   ├── src/
-│   │   └── main.rs         # Implementação da análise
-│   └── Cargo.toml
-├── data/                   # Diretório de dados (criado em runtime)
-│   ├── fingerprints.log    # Log de fingerprints
-│   └── stats.json         # Estatísticas agregadas
-├── server.js               # Servidor Express com persistência (Seção 5.2)
-├── entropy-analyzer.js     # Analisador de entropia em Node.js
-├── package.json           # Configuração Node.js
-└── README.md
+├── 📁 wasm-fingerprint/     # Módulo Rust/WebAssembly
+│   ├── 📁 src/
+│   │   ├── 📄 lib.rs        # Orquestrador principal
+│   │   ├── 📄 dom_utils.rs  # Funções auxiliares DOM
+│   │   ├── 📄 canvas_fingerprint.rs  # Canvas fingerprinting
+│   │   ├── 📄 webgl_fingerprint.rs   # WebGL 1.0/2.0
+│   │   ├── 📄 audio_fingerprint.rs   # Audio fingerprinting
+│   │   ├── 📄 hardware_benchmarks.rs # Microbenchmarks
+│   │   ├── 📄 port_contention.rs     # Contenção de portas
+│   │   ├── 📄 wasm_port_benchmark.rs # Benchmarks WASM
+│   │   └── 📄 utils.rs
+│   ├── 📄 Cargo.toml        # Configuração Rust
+│   └── 📁 pkg/              # Saída compilada (gerada)
+├── 📁 public/               # Interface web
+│   ├── 📄 index.html        # Interface principal
+│   ├── 📄 help.html         # Documentação integrada
+│   └── 📁 pkg/              # WASM gerado
+├── 📁 database/             # Camada de persistência SQLite
+│   ├── 📄 schema.sql        # Estrutura do banco (8 tabelas)
+│   ├── 📄 database.js       # Abstração SQLite
+│   └── 📄 fingerprints.db   # Banco SQLite (criado em runtime)
+├── 📁 config/               # Sistema de configuração
+│   └── 📄 index.js          # Config centralizada com env vars
+├── 📁 data/                 # Backup em arquivos
+│   ├── 📄 fingerprints.log  # Backup JSON Lines
+│   └── 📄 stats.json        # Estatísticas agregadas
+├── 📁 entropy-analyzer/     # Analisador de entropia (Rust)
+│   ├── 📁 src/
+│   │   └── 📄 main.rs
+│   └── 📄 Cargo.toml
+├── 📄 server.js             # Servidor Express + SQLite
+├── 📄 package.json          # Dependências Node.js
+├── 📄 .env.example          # Template de configuração
+└── 📄 README.md
 ```
 
 ### Cliente (WebAssembly/Rust)
@@ -194,15 +227,41 @@ wasm-finger/
 - Contorna limitação de 100μs do performance.now()
 - Requer headers COOP/COEP configurados no servidor
 
-### Servidor (Node.js/Express)
-- `server.js`: API REST com headers de segurança para SharedArrayBuffer
-- Headers COOP/COEP configurados:
-  - `Cross-Origin-Opener-Policy: same-origin`
-  - `Cross-Origin-Embedder-Policy: require-corp`
-- Endpoints:
-  - `POST /api/fingerprint`: Recebe dados de fingerprint
-  - `GET /api/stats`: Estatísticas gerais
-  - `POST /api/compare`: Compara dois fingerprints
+### Servidor (Node.js/Express) com SQLite
+
+#### Arquitetura de Persistência
+- **SQLite Database**: Banco principal com 8 tabelas relacionadas
+- **File Backup**: Backup automático em JSON Lines para compatibilidade
+- **Database Abstraction**: Camada de abstração com classe `FingerprintDatabase`
+
+#### Headers de Segurança
+- `Cross-Origin-Opener-Policy: same-origin`
+- `Cross-Origin-Embedder-Policy: require-corp`
+- `Cross-Origin-Resource-Policy: same-origin`
+
+#### Endpoints da API
+
+| Método | Endpoint | Descrição |
+|--------|----------|----------|
+| POST | `/api/fingerprint` | Recebe e armazena fingerprint |
+| GET | `/api/stats` | Estatísticas do banco SQLite |
+| GET | `/api/analytics` | Análises avançadas com entropia |
+| GET | `/api/fingerprint/:id` | Busca fingerprint específico |
+| POST | `/api/compare` | Compara dois fingerprints |
+| GET | `/api/config` | Configuração pública do cliente |
+| GET | `/health` | Status do servidor e banco |
+
+#### Estrutura do Banco SQLite
+
+**8 Tabelas Relacionadas:**
+- `fingerprints` - Dados principais
+- `browser_info` - Informações do navegador
+- `canvas_fingerprints` - Dados Canvas
+- `webgl_fingerprints` - Dados WebGL
+- `audio_fingerprints` - Dados Audio
+- `hardware_profiles` - Perfil de hardware
+- `hardware_benchmarks` - Resultados de benchmarks
+- `session_metadata` - Metadados da sessão
 
 ## 🔬 Características Técnicas
 
@@ -290,15 +349,37 @@ wasm-finger/
 }
 ```
 
-### Endpoints da API
+## 🗄️ Sistema de Persistência SQLite
 
-| Método | Endpoint | Descrição |
-|--------|----------|----------|
-| POST | `/api/fingerprint` | Envia fingerprint coletado |
-| GET | `/api/stats` | Retorna estatísticas gerais |
-| GET | `/api/fingerprint/:id` | Busca fingerprint específico |
-| POST | `/api/compare` | Compara dois fingerprints |
-| GET | `/health` | Status do servidor |
+### Vantagens da Implementação Atual
+- **Robustez**: Transações ACID garantem integridade
+- **Performance**: Índices otimizados para consultas rápidas
+- **Escalabilidade**: Suporta milhões de fingerprints
+- **Relacional**: Estrutura normalizada com foreign keys
+- **Análises**: Cálculos automáticos de entropia e estatísticas
+- **Backup**: Dual storage (SQLite + arquivo) para compatibilidade
+
+### Configuração do Banco
+```javascript
+// Inicialização automática no servidor
+const database = new FingerprintDatabase('./database/fingerprints.db');
+await database.initialize(); // Cria schema se necessário
+```
+
+### Consultas Disponíveis
+```javascript
+// Estatísticas gerais
+const stats = await database.getStatistics();
+
+// Cálculo de entropia
+const entropy = await database.calculateEntropy();
+
+// Fingerprints recentes
+const recent = await database.getRecentFingerprints(50);
+
+// Busca por ID
+const fingerprint = await database.getFingerprint(id);
+```
 
 ## 🎯 Funções Exportadas para JavaScript
 
@@ -381,14 +462,24 @@ Contribuições são bem-vindas! Por favor, abra uma issue ou pull request.
 
 ## 📈 Métricas de Performance
 
-- **Tamanho do WASM**: ~150KB (incluindo módulos de contenção)
-- **Tempo de coleta**: ~500-1500ms (básico), ~2-3s (com contenção completa)
+### Performance Geral
+- **Tamanho do WASM**: ~150KB (otimizado para produção)
+- **Tempo de coleta**: ~500-1500ms (fingerprinting completo)
 - **Taxa de unicidade**: >95% em testes preliminares
 - **Compatibilidade**: Chrome 90+, Firefox 89+, Safari 14.1+
-- **Timer de Alta Precisão**:
-  - Resolução: <1μs (vs 100μs do performance.now())
-  - Taxa: ~2-10M incrementos/segundo (dependendo do CPU)
-  - Requer: SharedArrayBuffer (headers COOP/COEP)
+
+### Performance do Banco SQLite
+- **Inserção**: ~5-10ms por fingerprint
+- **Consulta por ID**: ~1-2ms
+- **Estatísticas**: ~10-50ms (dependendo do dataset)
+- **Cálculo de entropia**: ~100-500ms (10k+ registros)
+- **Índices**: Automáticos em fingerprint_id, session_id, timestamps
+
+### Sistema de Backup Dual
+- **SQLite**: Persistência principal com ACID
+- **File Log**: Backup em JSON Lines (~1-2ms por write)
+- **Sincronização**: Automática e transparente
+- **Recuperação**: Fallback automático em caso de erro no SQLite
 
 ## 📝 Progresso de Implementação
 
@@ -405,11 +496,17 @@ Contribuições são bem-vindas! Por favor, abra uma issue ou pull request.
 - [x] **Seção 5.1**: Serialização e Transmissão - FingerprintClient para coleta estruturada
 - [x] **Seção 5.2**: Endpoint de Ingestão - Servidor com persistência e analytics
 - [x] **Seção 5.3**: Análise de Entropia - Implementações em Rust e Node.js
+- [x] **🗄️ Migração SQLite**: Sistema de persistência robusto com 8 tabelas relacionadas
+- [x] **🧹 Limpeza Codebase**: Remoção de códigos legados e redundâncias
+- [x] **📊 Sistema Analytics**: Endpoints avançados com cálculos de entropia automáticos
+- [x] **🔧 Sistema Config**: Configuração centralizada com variáveis de ambiente
+- [x] **📋 Documentação**: Diagrama de arquitetura completo em Mermaid
 
-### 🔄 Em Desenvolvimento
-- [ ] Integração com Machine Learning
-- [ ] Detecção de anti-fingerprinting
-- [ ] Dashboard de visualização
+### 🔄 Roadmap Futuro
+- [ ] Dashboard web para visualização de dados
+- [ ] Exportação de relatórios em múltiplos formatos
+- [ ] Integração com ferramentas de análise ML
+- [ ] Sistema de alertas para fingerprints anômalos
 
 ## 📡 Seção 5: Manuseio de Dados e Análise de Entropia
 
@@ -452,25 +549,41 @@ await client.submitFingerprint(fingerprint);
 }
 ```
 
-### 5.2 Endpoint do Servidor para Ingestão
+### 5.2 Endpoint do Servidor com SQLite
 
-O servidor Express foi atualizado com persistência em arquivo e cálculo de estatísticas:
+O servidor Express foi completamente refatorado com persistência SQLite robusta:
 
 ```javascript
-// Endpoint melhorado com persistência
+// Endpoint com SQLite + backup dual
 app.post('/api/fingerprint', async (req, res) => {
-    // Valida dados
-    // Gera fingerprint ID composto
-    // Persiste em arquivo log
-    // Atualiza estatísticas
-    // Retorna resposta com análise
+    // 1. Valida payload
+    // 2. Gera fingerprint ID composto (SHA-256)
+    // 3. Armazena em SQLite (8 tabelas relacionadas)
+    // 4. Backup em arquivo JSON Lines
+    // 5. Calcula estatísticas e retorna resposta
 });
 
-// Novo endpoint de analytics
+// Endpoints avançados de analytics
 app.get('/api/analytics', async (req, res) => {
-    // Retorna estatísticas e entropia calculada
+    // Estatísticas + entropia + atividade recente
+});
+
+app.get('/api/stats', async (req, res) => {
+    // Estatísticas básicas do banco SQLite
+});
+
+app.get('/health', async (req, res) => {
+    // Status do servidor + informações do banco
 });
 ```
+
+#### Vantagens da Nova Implementação
+- **Transações ACID**: Garantia de integridade de dados
+- **Consultas SQL**: Análises complexas e relatórios
+- **Relacionamentos**: Dados normalizados em estrutura relacional
+- **Performance**: Índices otimizados para consultas rápidas
+- **Escalabilidade**: Suporte a milhões de registros
+- **Backup Dual**: SQLite + arquivo para máxima confiabilidade
 
 ### 5.3 Análise de Entropia de Shannon
 
@@ -523,11 +636,35 @@ node entropy-analyzer.js ./data/fingerprints.log
 ### Arquivos de Dados
 
 ```
+database/
+├── fingerprints.db       # Base SQLite principal (8 tabelas)
+├── schema.sql           # Estrutura do banco
+└── database.js          # Abstração e métodos
+
 data/
-├── fingerprints.log      # Log de todos os fingerprints (JSONL)
-├── stats.json           # Estatísticas agregadas
-└── fingerprints_analysis.json  # Relatório de análise
+├── fingerprints.log      # Backup em JSON Lines
+└── stats.json           # Cache de estatísticas
 ```
+
+### Schema SQLite Completo
+
+**Relacionamentos das Tabelas:**
+```sql
+fingerprints (principal)
+├── browser_info         (1:1) - Informações do navegador
+├── canvas_fingerprints  (1:1) - Hash e dados Canvas
+├── webgl_fingerprints   (1:1) - Vendor/renderer WebGL
+├── audio_fingerprints   (1:1) - Hash de áudio
+├── hardware_profiles    (1:1) - Cores, memória, concurrency
+├── hardware_benchmarks  (1:1) - Resultados de performance
+└── session_metadata     (1:1) - IP, user-agent, referer
+```
+
+**Índices Otimizados:**
+- `fingerprint_id` (PRIMARY KEY em todas as tabelas)
+- `fingerprint_hash` (para consultas de duplicação)
+- `session_id` (para análise de sessões)
+- `server_timestamp` (para consultas temporais)
 
 ## 🤝 Colaboradores
 

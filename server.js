@@ -5,22 +5,22 @@ const fs = require('fs').promises;
 const fsSync = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const config = require('./config');
+const FingerprintDatabase = require('./database/database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.server.port;
 
-// IMPORTANTE: Headers de segurança para SharedArrayBuffer
-// Cross-Origin-Opener-Policy (COOP) e Cross-Origin-Embedder-Policy (COEP)
-// Necessários para usar SharedArrayBuffer (Seção 4.3)
+// Security headers middleware
 app.use((req, res, next) => {
-    // Headers para contexto isolado de origem cruzada
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    if (config.security.enableCoopCoep) {
+        // Headers for SharedArrayBuffer support
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+    }
 
-    // Headers adicionais de segurança
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-
-    // Para recursos WASM
+    // WASM content type
     if (req.path.endsWith('.wasm')) {
         res.setHeader('Content-Type', 'application/wasm');
     }
@@ -28,24 +28,32 @@ app.use((req, res, next) => {
     next();
 });
 
-// Middleware
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
+// CORS middleware with config
+app.use(cors(config.security.cors));
+
+// Body parser middleware
 app.use(bodyParser.json({ limit: '10mb' }));
+
+// Rate limiting middleware (if enabled)
+if (config.security.rateLimit.enabled) {
+    const rateLimit = require('express-rate-limit');
+    const limiter = rateLimit({
+        windowMs: config.security.rateLimit.windowMs,
+        max: config.security.rateLimit.maxRequests,
+        message: 'Too many requests from this IP'
+    });
+    app.use('/api/', limiter);
+}
 app.use(express.static('public'));
 app.use('/wasm', express.static('wasm-fingerprint/pkg'));
 app.use('/wasm-fingerprint', express.static('wasm-fingerprint'));
 
-// In-memory storage (for demo purposes - use database in production)
-const fingerprints = new Map();
-const sessions = new Map();
+// Initialize SQLite database
+const database = new FingerprintDatabase('./database/fingerprints.db');
 
-// File-based persistence (Seção 5.2)
-const LOG_DIR = path.join(__dirname, 'data');
-const LOG_FILE = path.join(LOG_DIR, 'fingerprints.log');
-const STATS_FILE = path.join(LOG_DIR, 'stats.json');
+// Legacy file-based storage (optional backup)
+const LOG_DIR = path.join(__dirname, config.storage.dataDir);
+const LOG_FILE = path.join(LOG_DIR, config.storage.logFile);
 
 // Ensure data directory exists
 if (!fsSync.existsSync(LOG_DIR)) {
@@ -69,18 +77,12 @@ app.post('/api/fingerprint', async (req, res) => {
         const sessionId = fingerprintData.sessionId || crypto.randomBytes(16).toString('hex');
 
         // Generate composite fingerprint ID from all data
-        const fingerprintComponents = {
-            proposalA: fingerprintData.proposalA || {},
-            proposalB: fingerprintData.proposalB || {},
-            browserAttributes: fingerprintData.browserAttributes || {}
-        };
-
         const fingerprintId = crypto
             .createHash('sha256')
-            .update(JSON.stringify(fingerprintComponents))
+            .update(JSON.stringify(fingerprintData))
             .digest('hex');
 
-        // Add server metadata
+        // Prepare data for storage
         const storedData = {
             id: fingerprintId,
             sessionId: sessionId,
@@ -95,11 +97,16 @@ app.post('/api/fingerprint', async (req, res) => {
             }
         };
 
-        // Store in memory
-        fingerprints.set(fingerprintId, storedData);
-        sessions.set(sessionId, fingerprintId);
+        // Store in SQLite database
+        try {
+            await database.storeFingerprint(storedData);
+            console.log(`Fingerprint stored in database: ${fingerprintId.substring(0, 16)}...`);
+        } catch (dbError) {
+            console.error('Error storing in database:', dbError);
+            // Continue with file backup if database fails
+        }
 
-        // Persist to file (append to log)
+        // Backup to file (optional)
         const logEntry = JSON.stringify(storedData) + '\n';
         try {
             await fs.appendFile(LOG_FILE, logEntry);
@@ -107,32 +114,30 @@ app.post('/api/fingerprint', async (req, res) => {
             console.error('Error writing to log file:', err);
         }
 
-        // Check if this fingerprint has been seen before
-        const previousSessions = Array.from(fingerprints.values())
-            .filter(fp => fp.id === fingerprintId)
-            .length;
+        // Check session count from database
+        const sessionCount = await database.getSessionCount(fingerprintData.fingerprint_hash || fingerprintId);
+        const isReturningUser = sessionCount > 1;
 
         console.log(`Received fingerprint: ${fingerprintId.substring(0, 16)}...`);
         console.log(`Session ID: ${sessionId}`);
-        if (fingerprintData.proposalA) {
-            console.log(`Canvas: ${fingerprintData.proposalA.canvas?.substring(0, 16) || 'N/A'}...`);
-            console.log(`WebGL: ${fingerprintData.proposalA.webgl?.substring(0, 30) || 'N/A'}...`);
+        console.log(`Fingerprint Hash: ${fingerprintData.fingerprint_hash?.substring(0, 16) || 'N/A'}...`);
+        if (fingerprintData.canvas_fingerprint) {
+            console.log(`Canvas: ${fingerprintData.canvas_fingerprint.hash?.substring(0, 16) || 'N/A'}...`);
         }
-        if (fingerprintData.proposalB) {
-            console.log(`Port Contention: ${fingerprintData.proposalB.portContention?.substring(0, 16) || 'N/A'}...`);
-            console.log(`Distinguishers:`, fingerprintData.proposalB.distinguishers?.length || 0);
+        if (fingerprintData.webgl_fingerprint) {
+            console.log(`WebGL: ${fingerprintData.webgl_fingerprint.vendor || 'N/A'} - ${fingerprintData.webgl_fingerprint.renderer || 'N/A'}`);
         }
-        console.log(`Previous sessions with this fingerprint: ${previousSessions}`);
-
-        // Update statistics
-        await updateStatistics(fingerprintId, sessionId);
+        if (fingerprintData.hardware_profile) {
+            console.log(`Hardware: ${fingerprintData.hardware_profile.cores || 'N/A'} cores, ${fingerprintData.hardware_profile.memory || 'N/A'}GB`);
+        }
+        console.log(`Session count for this fingerprint: ${sessionCount}`);
 
         res.json({
             success: true,
             fingerprintId: fingerprintId,
             sessionId: sessionId,
-            isReturningUser: previousSessions > 1,
-            sessionsCount: previousSessions,
+            isReturningUser: isReturningUser,
+            sessionsCount: sessionCount,
             timestamp: storedData.serverTimestamp
         });
 
@@ -146,32 +151,38 @@ app.post('/api/fingerprint', async (req, res) => {
 });
 
 // Endpoint to get fingerprint statistics
-app.get('/api/stats', (req, res) => {
-    const stats = {
-        totalFingerprints: fingerprints.size,
-        totalSessions: sessions.size,
-        uniqueFingerprints: new Set(
-            Array.from(fingerprints.values()).map(fp => fp.id)
-        ).size,
-        timestamps: Array.from(fingerprints.values())
-            .map(fp => fp.timestamp)
-            .sort()
-    };
-
-    res.json(stats);
+app.get('/api/stats', async (req, res) => {
+    try {
+        const stats = await database.getStatistics();
+        res.json(stats);
+    } catch (error) {
+        console.error('Error getting statistics:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve statistics'
+        });
+    }
 });
 
 // Endpoint to get specific fingerprint data
-app.get('/api/fingerprint/:id', (req, res) => {
-    const fingerprintId = req.params.id;
-    const data = fingerprints.get(fingerprintId);
+app.get('/api/fingerprint/:id', async (req, res) => {
+    try {
+        const fingerprintId = req.params.id;
+        const data = await database.getFingerprint(fingerprintId);
 
-    if (data) {
-        res.json(data);
-    } else {
-        res.status(404).json({
+        if (data) {
+            res.json(data);
+        } else {
+            res.status(404).json({
+                success: false,
+                error: 'Fingerprint not found'
+            });
+        }
+    } catch (error) {
+        console.error('Error getting fingerprint:', error);
+        res.status(500).json({
             success: false,
-            error: 'Fingerprint not found'
+            error: 'Failed to retrieve fingerprint'
         });
     }
 });
@@ -265,96 +276,105 @@ function calculateBrowserSimilarity(attr1, attr2) {
     return matches / total;
 }
 
-// Update statistics helper
-async function updateStatistics(fingerprintId, sessionId) {
-    try {
-        let stats = {};
-
-        // Load existing stats if available
-        try {
-            const data = await fs.readFile(STATS_FILE, 'utf8');
-            stats = JSON.parse(data);
-        } catch (err) {
-            // File doesn't exist yet
-            stats = {
-                totalSessions: 0,
-                uniqueFingerprints: new Set(),
-                firstSeen: new Date().toISOString(),
-                lastUpdated: null
-            };
-        }
-
-        // Update stats
-        stats.totalSessions = (stats.totalSessions || 0) + 1;
-        if (!stats.uniqueFingerprints) stats.uniqueFingerprints = [];
-        if (!stats.uniqueFingerprints.includes(fingerprintId)) {
-            stats.uniqueFingerprints.push(fingerprintId);
-        }
-        stats.lastUpdated = new Date().toISOString();
-
-        // Calculate entropy (simplified version)
-        stats.uniqueCount = stats.uniqueFingerprints.length;
-        stats.entropy = calculateSimpleEntropy(stats.uniqueFingerprints.length, stats.totalSessions);
-
-        // Save updated stats
-        await fs.writeFile(STATS_FILE, JSON.stringify(stats, null, 2));
-
-    } catch (err) {
-        console.error('Error updating statistics:', err);
-    }
-}
-
-// Simple entropy calculation
-function calculateSimpleEntropy(uniqueCount, totalCount) {
-    if (totalCount === 0) return 0;
-    const probability = uniqueCount / totalCount;
-    if (probability === 0 || probability === 1) return 0;
-    return -probability * Math.log2(probability) - (1 - probability) * Math.log2(1 - probability);
-}
 
 // Endpoint to get detailed statistics with entropy calculation
 app.get('/api/analytics', async (req, res) => {
     try {
-        // Load stats from file
-        let stats = {};
-        try {
-            const data = await fs.readFile(STATS_FILE, 'utf8');
-            stats = JSON.parse(data);
-        } catch (err) {
-            stats = { message: 'No statistics available yet' };
-        }
+        const stats = await database.getStatistics();
+        const entropy = await database.calculateEntropy();
+        const recentFingerprints = await database.getRecentFingerprints(50);
 
-        // Add current in-memory data
-        stats.currentSession = {
-            fingerprintsInMemory: fingerprints.size,
-            sessionsInMemory: sessions.size
+        const analyticsData = {
+            ...stats,
+            entropy: entropy,
+            recentActivity: recentFingerprints.length,
+            recentFingerprints: recentFingerprints.map(fp => ({
+                id: fp.fingerprint_id.substring(0, 16) + '...',
+                hash: fp.fingerprint_hash.substring(0, 16) + '...',
+                timestamp: fp.server_timestamp
+            })),
+            lastUpdated: new Date().toISOString()
         };
 
-        res.json(stats);
+        res.json(analyticsData);
     } catch (error) {
         console.error('Error getting analytics:', error);
-        res.status(500).json({ error: 'Failed to retrieve analytics' });
+        res.status(500).json({
+            success: false,
+            error: 'Failed to retrieve analytics'
+        });
     }
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Configuration endpoint for client
+app.get('/api/config', (req, res) => {
+    // Send public configuration to client
     res.json({
-        status: 'ok',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-        dataDir: LOG_DIR,
-        logFile: LOG_FILE
+        features: config.features,
+        benchmarks: {
+            cpuIterations: config.benchmarks.cpuIterations,
+            memorySizeMB: config.benchmarks.memorySizeMB,
+            cryptoIterations: config.benchmarks.cryptoIterations,
+            timeoutMs: config.benchmarks.timeoutMs
+        },
+        api: {
+            version: config.api.version,
+            timeout: config.api.timeout
+        },
+        environment: config.server.nodeEnv
     });
 });
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        const stats = await database.getStatistics();
+        res.json({
+            status: 'ok',
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            database: {
+                type: 'SQLite',
+                path: './database/fingerprints.db',
+                totalFingerprints: stats.totalFingerprints,
+                totalSessions: stats.totalSessions,
+                uniqueFingerprints: stats.uniqueFingerprints
+            },
+            legacy: {
+                dataDir: LOG_DIR,
+                logFile: LOG_FILE
+            }
+        });
+    } catch (error) {
+        res.json({
+            status: 'ok',
+            uptime: process.uptime(),
+            timestamp: new Date().toISOString(),
+            database: {
+                type: 'SQLite',
+                path: './database/fingerprints.db',
+                status: 'error',
+                error: error.message
+            }
+        });
+    }
+});
+
 // Start server
-app.listen(PORT, () => {
-    console.log(`Fingerprint server running on http://localhost:${PORT}`);
-    console.log(`API endpoints:`);
-    console.log(`  POST /api/fingerprint - Submit fingerprint data`);
-    console.log(`  GET  /api/stats - Get statistics`);
-    console.log(`  GET  /api/fingerprint/:id - Get specific fingerprint`);
-    console.log(`  POST /api/compare - Compare two fingerprints`);
-    console.log(`  GET  /health - Health check`);
+app.listen(PORT, config.server.host, () => {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🚀 Fingerprint Server Started`);
+    console.log(`${'='.repeat(60)}`);
+    console.log(`Environment: ${config.server.nodeEnv}`);
+    console.log(`Server: http://${config.server.host}:${PORT}`);
+    console.log(`Data Directory: ${LOG_DIR}`);
+    console.log(`\nFeatures Enabled:`);
+    Object.entries(config.features).forEach(([feature, enabled]) => {
+        console.log(`  ${enabled ? '✅' : '❌'} ${feature}`);
+    });
+    console.log(`\nAPI Endpoints:`);
+    Object.entries(config.api.endpoints).forEach(([name, path]) => {
+        console.log(`  ${path} - ${name}`);
+    });
+    console.log(`${'='.repeat(60)}\n`);
 });

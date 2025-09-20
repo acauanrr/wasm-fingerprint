@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia do Browser Fingerprinting - WASM Fingerprint</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 1.8em;
+        }
+
+        .section h3 {
+            color: #555;
+            margin-bottom: 15px;
+            margin-top: 25px;
+            font-size: 1.3em;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-card h4 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 10px 0 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .steps {
+            counter-reset: step-counter;
+        }
+
+        .step {
+            counter-increment: step-counter;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .step::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="window.close()">← Voltar</button>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Guia do Browser Fingerprinting</h1>
+            <p>Como usar e interpretar os dados coletados</p>
+        </div>
+
+        <div class="content">
+            <div class="warning">
+                <span style="font-size: 1.5em;">⚠️</span>
+                <div>
+                    <strong>Demo Acadêmica:</strong> Esta é uma demonstração para fins de pesquisa em privacidade digital.
+                    Nenhum dado é armazenado permanentemente ou compartilhado com terceiros.
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🎯 O que é Browser Fingerprinting?</h2>
+                <p>Browser fingerprinting é uma técnica que coleta informações específicas do seu navegador e dispositivo para criar uma "impressão digital" única. Esta identificação pode ser usada para rastrear usuários mesmo sem cookies.</p>
+
+                <h3>Nosso Sistema Implementa:</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>🎨 Canvas Fingerprinting</h4>
+                        <p>Renderiza gráficos invisíveis e analisa como seu hardware/software processa as imagens.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🎮 WebGL Fingerprinting</h4>
+                        <p>Identifica sua placa de vídeo e drivers através de informações de renderização 3D.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🔊 Audio Fingerprinting</h4>
+                        <p>Analisa como seu sistema processa sinais de áudio para detectar diferenças de hardware.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>💻 Hardware Benchmarks</h4>
+                        <p>Testa performance do processador usando WebAssembly para detectar microarquitetura.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📝 Como Usar o Sistema</h2>
+                <div class="steps">
+                    <div class="step">
+                        <h4>Coleta Inicial</h4>
+                        <p>Clique em <strong>"🎯 Start Collection"</strong> para executar a coleta completa de fingerprint. O processo leva alguns segundos e coleta dados de Canvas, WebGL, Audio e informações do navegador.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Testes de Hardware</h4>
+                        <p>Use <strong>"⚡ Hardware Benchmarks"</strong> para executar apenas os testes de performance que analisam características específicas do seu processador.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Comparação de Sessões</h4>
+                        <p>Execute a coleta duas vezes e depois clique em <strong>"🔄 Compare Sessions"</strong> para ver se o sistema consegue detectar que é o mesmo dispositivo.</p>
+                    </div>
+                    <div class="step">
+                        <h4>Análise dos Resultados</h4>
+                        <p>Use as abas para explorar os diferentes tipos de dados coletados: Overview, Browser, Canvas, WebGL, Audio, Hardware e Raw Data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Interpretando os Resultados</h2>
+
+                <h3>🔐 Fingerprint Hash</h3>
+                <p>O hash principal é uma combinação SHA-256 de todos os dados coletados. Dispositivos idênticos devem gerar o mesmo hash.</p>
+
+                <h3>🌐 Informações do Navegador</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>User Agent:</strong> Identifica o navegador e sistema operacional</li>
+                    <li><strong>Resolução de Tela:</strong> Dimensões da sua tela</li>
+                    <li><strong>Profundidade de Cor:</strong> Quantos bits por pixel sua tela suporta</li>
+                    <li><strong>Timezone Offset:</strong> Seu fuso horário em relação ao UTC</li>
+                </ul>
+
+                <h3>💻 Perfil de Hardware</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Cores/Concurrency:</strong> Número de núcleos do processador detectados</li>
+                    <li><strong>Benchmarks:</strong> Tempos de execução em milissegundos para diferentes operações</li>
+                    <li><strong>Math/String/Array/Crypto Ops:</strong> Performance em operações específicas</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🔄 Como Testar Comparações</h2>
+
+                <h3>Cenário 1: Mesmo Dispositivo</h3>
+                <div class="steps">
+                    <div class="step">
+                        Execute a coleta uma primeira vez
+                    </div>
+                    <div class="step">
+                        Execute a coleta uma segunda vez
+                    </div>
+                    <div class="step">
+                        Clique em "🔄 Compare Sessions"
+                    </div>
+                    <div class="step">
+                        Resultado esperado: "✅ Same Device"
+                    </div>
+                </div>
+
+                <h3>Cenário 2: Dispositivos Diferentes</h3>
+                <div class="steps">
+                    <div class="step">
+                        Execute a coleta em um navegador (ex: Chrome)
+                    </div>
+                    <div class="step">
+                        Execute a coleta em outro navegador (ex: Firefox/Edge)
+                    </div>
+                    <div class="step">
+                        Compare os resultados manualmente observando os hashes
+                    </div>
+                    <div class="step">
+                        Resultado esperado: Hashes diferentes
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🗂️ Persistência de Dados com SQLite</h2>
+                <p>O sistema agora usa <strong>SQLite</strong> como banco de dados principal, proporcionando maior robustez e capacidade de consulta:</p>
+
+                <h3>📍 Localização do Banco</h3>
+                <div class="code">
+                    /home/acauan/ufam/wasm-finger/database/fingerprints.db
+                </div>
+
+                <h3>🏗️ Estrutura do Banco</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>📋 Tabela Principal</h4>
+                        <p><strong>fingerprints:</strong> Dados básicos de cada coleta</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🌐 Informações do Browser</h4>
+                        <p><strong>browser_info:</strong> User-agent, plataforma, resolução</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🎨 Fingerprints Específicos</h4>
+                        <p><strong>canvas_fingerprints, webgl_fingerprints, audio_fingerprints</strong></p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>💻 Perfil de Hardware</h4>
+                        <p><strong>hardware_profiles, hardware_benchmarks</strong></p>
+                    </div>
+                </div>
+
+                <h3>🔧 Backup e Compatibilidade</h3>
+                <p>O sistema mantém compatibilidade com o arquivo de log anterior:</p>
+                <div class="code">
+                    /home/acauan/ufam/wasm-finger/data/fingerprints.log
+                </div>
+                <p>Ambos os formatos são atualizados simultaneamente para garantir backup dos dados.</p>
+
+                <h3>📊 Vantagens do SQLite</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Consultas estruturadas:</strong> SQL para análises complexas</li>
+                    <li><strong>Relacionamentos:</strong> Dados organizados em tabelas relacionadas</li>
+                    <li><strong>Índices:</strong> Busca rápida por hash, sessão, timestamp</li>
+                    <li><strong>Integridade:</strong> Transações ACID garantem consistência</li>
+                    <li><strong>Escalabilidade:</strong> Suporta milhões de fingerprints</li>
+                    <li><strong>Análises:</strong> Cálculo automático de entropia e estatísticas</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🛡️ Endpoints da API</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>📊 /api/stats</h4>
+                        <p>Estatísticas gerais: total de fingerprints únicos e sessões</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🏥 /health</h4>
+                        <p>Status do servidor e informações de sistema</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>📈 /api/analytics</h4>
+                        <p>Análises detalhadas com cálculos de entropia</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>🔍 /api/fingerprint/:id</h4>
+                        <p>Buscar fingerprint específico por ID</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>⚠️ Limitações e Considerações</h2>
+                <ul style="margin-left: 20px;">
+                    <li>Os dados são armazenados apenas localmente durante a demonstração</li>
+                    <li>Alguns valores podem variar ligeiramente entre execuções (ex: benchmarks)</li>
+                    <li>Navegadores diferentes podem ter implementações ligeiramente diferentes das APIs</li>
+                    <li>Extensões do navegador podem afetar os resultados</li>
+                    <li>Este é um sistema de demonstração acadêmica, não destinado ao uso em produção</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="/" class="btn">🏠 Voltar ao Sistema</a>
+                <button class="btn" onclick="window.print()">🖨️ Imprimir Guia</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -16,6 +16,9 @@ data/
 stats.json
 *_analysis.json
 
+# Database files
+database/fingerprints.db
+
 # Rust
 entropy-analyzer/target/
 **/*.rs.bk

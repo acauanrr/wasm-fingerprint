@@ -49,19 +49,19 @@ impl CanvasFingerprint {
     fn draw_fingerprint_scene(ctx: &CanvasRenderingContext2d) -> Result<(), JsValue> {
         // Text with special unicode characters
         ctx.set_text_baseline("alphabetic");
-        ctx.set_fill_style(&"#f60".into());
+        ctx.set_fill_style_str("#f60");
         ctx.fill_rect(125.0, 1.0, 62.0, 20.0);
 
-        ctx.set_fill_style(&"#069".into());
+        ctx.set_fill_style_str("#069");
         ctx.set_font("11pt Arial");
         ctx.fill_text("Cwm fjordbank glyphs vext quiz, 😃", 2.0, 15.0)?;
 
         // Complex gradient - create_linear_gradient not available in current web-sys
-        ctx.set_fill_style(&"rgba(100, 150, 200, 0.5)".into());
+        ctx.set_fill_style_str("rgba(100, 150, 200, 0.5)");
         ctx.fill_rect(0.0, 20.0, 280.0, 20.0);
 
         // Bezier curves
-        ctx.set_stroke_style(&"rgb(120, 186, 176)".into());
+        ctx.set_stroke_style_str("rgb(120, 186, 176)");
         ctx.begin_path();
         ctx.move_to(20.0, 40.0);
         ctx.bezier_curve_to(20.0, 50.0, 200.0, 50.0, 200.0, 40.0);
@@ -69,7 +69,7 @@ impl CanvasFingerprint {
 
         // Arc with transparency
         ctx.set_global_composite_operation("multiply")?;
-        ctx.set_fill_style(&"rgba(255, 125, 0, 0.5)".into());
+        ctx.set_fill_style_str("rgba(255, 125, 0, 0.5)");
         ctx.begin_path();
         ctx.arc(50.0, 50.0, 20.0, 0.0, std::f64::consts::PI * 2.0)?;
         ctx.fill();
@@ -87,8 +87,8 @@ impl CanvasFingerprint {
 
         for (i, font) in fonts.iter().enumerate() {
             ctx.set_font(font);
-            ctx.set_fill_style(&format!("rgba({}, {}, {}, 0.8)",
-                i * 50, 255 - i * 50, (i * 30) % 255).into());
+            ctx.set_fill_style_str(&format!("rgba({}, {}, {}, 0.8)",
+                i * 50, 255 - i * 50, (i * 30) % 255));
             ctx.fill_text(&format!("Test {}", i), 10.0 + (i as f64 * 70.0), 55.0)?;
         }
 

@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build:wasm": "cd wasm-fingerprint && wasm-pack build --target web --out-dir pkg",
+    "build:wasm": "cd wasm-fingerprint && export PATH=\"$HOME/.cargo/bin:$PATH\" && wasm-pack build --target web --out-dir ../public/pkg --no-opt",
     "build": "npm run build:wasm",
     "start": "node server.js",
-    "dev": "npm run build && npm start"
+    "dev": "npm run build && npm start",
+    "clean": "rm -rf public/pkg database/fingerprints.db data/fingerprints.log"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +17,7 @@
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "sqlite3": "^5.1.7"
   }
 }
