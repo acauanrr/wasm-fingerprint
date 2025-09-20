@@ -6,33 +6,14 @@
 
 Uma implementação avançada de browser fingerprinting usando WebAssembly com persistência SQLite robusta, baseada em pesquisa acadêmica sobre técnicas de rastreamento stateless e identificação de dispositivos através de microbenchmarks de hardware.
 
-## 📚 Documentação
-
-| Documento | Descrição |
-|-----------|-----------|
-| 📖 [README.md](README.md) | Documentação principal e guia de uso |
-| 🏗️ [System Architecture](.context/system-architecture.md) | Arquitetura completa com diagramas Mermaid |
-| 🌐 [Live Demo](https://wasm-fingerprint-78aae8be269e.herokuapp.com/) | Aplicação em produção |
-| 📊 [API Documentation](#endpoints-da-api) | Endpoints e exemplos de uso |
-
 ## 📋 Visão Geral
 
-Este projeto implementa duas propostas complementares de fingerprinting:
+O sistema coleta características únicas do dispositivo/navegador:
 
-### Proposta A: Fingerprinting via APIs Tradicionais
-- Canvas fingerprinting com renderização complexa
-- WebGL fingerprinting com informações de GPU
-- Audio fingerprinting usando OfflineAudioContext
-- Coleta de atributos do navegador e sistema
-
-### Proposta B: Microbenchmarks de Hardware
-- Benchmarks de CPU com operações intensivas
-- Benchmarks de acesso à memória
-- Benchmarks de operações criptográficas
-- Perfil de temporização de instruções
-- **Contenção de Portas Sequenciais (Seção 4.1)**: Exploração de ILP do CPU
-- **Benchmarks WASM específicos (Seção 4.2)**: Controle preciso de instruções
-- **Timer de Alta Precisão (Seção 4.3)**: SharedArrayBuffer com Web Workers
+- **Canvas/WebGL/Audio:** Assinaturas gráficas e de áudio
+- **Hardware:** Benchmarks de CPU e memória
+- **Browser:** Configurações e atributos
+- **Comparação inteligente:** Algoritmo com tolerância de 15% para variações
 
 ## ⚙️ Configuração do Ambiente
 

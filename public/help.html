@@ -204,181 +204,115 @@
 
     <div class="container">
         <div class="header">
-            <h1>📚 Guia do Sistema</h1>
-            <p>Como usar o WASM Fingerprint para testes de privacidade</p>
+            <h1>📚 WASM Fingerprint</h1>
+            <p>Sistema de identificação de dispositivos via navegador</p>
         </div>
 
         <div class="content">
-            <div class="warning">
-                <span style="font-size: 1.5em;">🔬</span>
+            <div class="info">
+                <span style="font-size: 1.5em;">ℹ️</span>
                 <div>
-                    <strong>Sistema de Pesquisa:</strong> Este é um projeto acadêmico para estudo de privacidade digital e técnicas de fingerprinting. Dados temporários no Heroku (resetam a cada ~24h).
+                    <strong>O que é:</strong> Sistema que identifica dispositivos únicos através de características do navegador e hardware.
                 </div>
             </div>
 
             <div class="section">
-                <h2>🚀 Início Rápido</h2>
+                <h2>🚀 Como Usar</h2>
                 <div class="steps">
                     <div class="step">
-                        <strong>Coletar Fingerprint</strong>
-                        <p>Clique em <strong>"🎯 Start Collection"</strong> para coletar todos os dados do seu navegador.</p>
+                        <strong>Coletar</strong>
+                        <p>Clique em "Start Collection" para analisar seu navegador</p>
                     </div>
                     <div class="step">
-                        <strong>Visualizar Resultados</strong>
-                        <p>Explore as abas para ver os dados coletados: Canvas, WebGL, Audio, Hardware, etc.</p>
+                        <strong>Visualizar</strong>
+                        <p>Veja os dados coletados nas diferentes abas</p>
                     </div>
                     <div class="step">
-                        <strong>Comparar Sessões</strong>
-                        <p>Faça duas coletas e clique em <strong>"🔄 Compare Sessions"</strong> para verificar se é o mesmo dispositivo.</p>
+                        <strong>Comparar</strong>
+                        <p>Compare duas coletas para verificar se são do mesmo dispositivo</p>
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>🔍 O que é Coletado?</h2>
+                <h2>🔍 Dados Coletados</h2>
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h4>🎨 Canvas</h4>
-                        <p>Renderiza gráficos invisíveis para criar uma assinatura única baseada em GPU/drivers.</p>
+                        <p>Assinatura gráfica única do navegador</p>
                     </div>
                     <div class="feature-card">
                         <h4>🎮 WebGL</h4>
-                        <p>Identifica placa de vídeo e capacidades de renderização 3D.</p>
+                        <p>Informações da placa de vídeo</p>
                     </div>
                     <div class="feature-card">
                         <h4>🔊 Audio</h4>
-                        <p>Processa sinais de áudio para detectar diferenças de hardware/software.</p>
+                        <p>Processamento de áudio do sistema</p>
                     </div>
                     <div class="feature-card">
                         <h4>⚡ Hardware</h4>
-                        <p>Benchmarks em WebAssembly para identificar características do CPU.</p>
+                        <p>Performance do processador</p>
                     </div>
                     <div class="feature-card">
                         <h4>🌐 Browser</h4>
-                        <p>User Agent, resolução, timezone, linguagem e outras configurações.</p>
+                        <p>Configurações do navegador</p>
                     </div>
                     <div class="feature-card">
-                        <h4>🔒 Session ID</h4>
-                        <p>Identificador único da sessão para rastrear múltiplas coletas.</p>
+                        <h4>🔒 Session</h4>
+                        <p>Identificador único da sessão</p>
                     </div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>📊 Entendendo os Resultados</h2>
+                <h2>📊 Resultados</h2>
 
-                <h3>Identificadores Principais</h3>
+                <h3>Como Funciona</h3>
+                <p>O sistema combina várias técnicas para criar uma "impressão digital" única do dispositivo:</p>
                 <ul>
-                    <li><strong>Session ID:</strong> Identifica unicamente o seu navegador/sessão</li>
-                    <li><strong>Fingerprint Hash:</strong> Varia a cada coleta devido aos benchmarks dinâmicos</li>
-                    <li><strong>Canvas/WebGL/Audio Hash:</strong> Geralmente constantes no mesmo dispositivo</li>
+                    <li><strong>Componentes estáveis:</strong> Canvas, WebGL e Audio (não mudam)</li>
+                    <li><strong>Componentes variáveis:</strong> Benchmarks de hardware (pequenas variações)</li>
+                    <li><strong>Identificação:</strong> Usa algoritmo de tolerância de 15% para hardware</li>
                 </ul>
 
-                <div class="info">
-                    <span style="font-size: 1.5em;">💡</span>
-                    <div>
-                        <strong>Importante:</strong> O sistema conta usuários únicos pelo Session ID, não pelo fingerprint hash, pois os benchmarks de hardware variam ligeiramente a cada execução.
-                    </div>
-                </div>
-
-                <h3>Estatísticas do Sistema</h3>
+                <h3>Estatísticas</h3>
                 <ul>
-                    <li><strong>Total Fingerprints:</strong> Número total de coletas realizadas</li>
-                    <li><strong>Unique Users:</strong> Número de sessões/navegadores únicos</li>
-                    <li><strong>Returning Users:</strong> Usuários que fizeram múltiplas coletas</li>
-                    <li><strong>Avg per User:</strong> Média de coletas por usuário</li>
+                    <li><strong>Total:</strong> Coletas realizadas</li>
+                    <li><strong>Únicos:</strong> Dispositivos diferentes</li>
+                    <li><strong>Retornos:</strong> Múltiplas coletas</li>
                 </ul>
             </div>
 
             <div class="section">
-                <h2>🧪 Como Testar</h2>
+                <h2>🧪 Testes</h2>
 
-                <h3>Teste 1: Mesmo Navegador</h3>
-                <div class="steps">
-                    <div class="step">
-                        Faça uma coleta inicial
-                    </div>
-                    <div class="step">
-                        Aguarde alguns segundos e faça outra coleta
-                    </div>
-                    <div class="step">
-                        Use "Compare Sessions" - Resultado: <strong>✅ Same Device</strong>
-                    </div>
-                </div>
+                <h3>Mesmo Navegador</h3>
+                <p>Faça duas coletas seguidas e compare. Resultado esperado: <strong>Mesmo dispositivo (>90% match)</strong></p>
 
-                <h3>Teste 2: Navegadores Diferentes</h3>
-                <div class="steps">
-                    <div class="step">
-                        Colete no Chrome
-                    </div>
-                    <div class="step">
-                        Abra no Edge/Firefox e colete
-                    </div>
-                    <div class="step">
-                        Compare os Session IDs - Resultado: <strong>IDs diferentes</strong>
-                    </div>
-                </div>
+                <h3>Navegadores Diferentes</h3>
+                <p>Teste em Chrome e Firefox. Resultado esperado: <strong>Dispositivos diferentes</strong></p>
 
-                <h3>Teste 3: Aba Anônima</h3>
-                <div class="steps">
-                    <div class="step">
-                        Colete em aba normal
-                    </div>
-                    <div class="step">
-                        Abra aba anônima/privada e colete
-                    </div>
-                    <div class="step">
-                        Compare - Resultado: <strong>Novo Session ID</strong> (mas hardware similar)
-                    </div>
-                </div>
+                <h3>Aba Anônima</h3>
+                <p>Compare aba normal com anônima. Resultado esperado: <strong>Session diferente, hardware similar</strong></p>
             </div>
 
-            <div class="section">
-                <h2>🔧 Armazenamento de Dados</h2>
-
-                <h3>Sistema Simplificado JSON</h3>
-                <p>O sistema usa logs JSON para máxima simplicidade e portabilidade:</p>
-
-                <div class="feature-grid">
-                    <div class="feature-card">
-                        <h4>📁 Local</h4>
-                        <p><code>./data/fingerprints.log</code> - Persistente em desenvolvimento</p>
-                    </div>
-                    <div class="feature-card">
-                        <h4>☁️ Heroku</h4>
-                        <p><code>/tmp/data/fingerprints.log</code> - Temporário (~24h)</p>
-                    </div>
-                </div>
-
-                <h3>Admin Dashboard</h3>
-                <p>Acesso restrito para visualizar estatísticas e gerenciar dados:</p>
-                <ul>
-                    <li>Estatísticas em tempo real</li>
-                    <li>Download de logs em JSON</li>
-                    <li>Reset de dados com confirmação</li>
-                    <li>Visualização de fingerprints recentes</li>
-                </ul>
-            </div>
 
             <div class="section">
-                <h2>🛡️ API Endpoints</h2>
+                <h2>🛡️ API</h2>
                 <div class="code">
-POST /api/fingerprint     - Enviar fingerprint coletado
-GET  /api/stats          - Estatísticas gerais
-GET  /api/fingerprint/:id - Buscar fingerprint específico
-POST /api/compare        - Comparar dois fingerprints
-GET  /health             - Status do sistema
+POST /api/fingerprint     - Enviar dados
+GET  /api/stats          - Estatísticas
+POST /api/compare        - Comparar dispositivos
                 </div>
             </div>
 
             <div class="section">
-                <h2>⚠️ Limitações</h2>
+                <h2>⚠️ Observações</h2>
                 <ul>
-                    <li>Dados no Heroku são temporários (resetam com dyno restart)</li>
-                    <li>Benchmarks variam ±10% entre execuções (normal)</li>
-                    <li>Extensões do navegador podem afetar resultados</li>
-                    <li>Modo privado/anônimo gera novo Session ID</li>
-                    <li>Sistema para fins acadêmicos apenas</li>
+                    <li>Benchmarks de hardware variam ±15% (normal)</li>
+                    <li>Extensões podem afetar resultados</li>
+                    <li>Modo anônimo gera novo ID de sessão</li>
+                    <li>Sistema acadêmico de pesquisa</li>
                 </ul>
             </div>
 
