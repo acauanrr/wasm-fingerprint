@@ -1,76 +1,112 @@
-# Importante: Persistência de Dados no Heroku
+# Sistema de Persistência SQLite no Heroku
 
-## O Problema
+## Como Funciona
 
-O Heroku usa um **filesystem efêmero**, o que significa que:
-- Arquivos criados em runtime são perdidos quando o dyno reinicia
-- SQLite em `/tmp` funciona apenas temporariamente
-- Os dados são perdidos a cada deploy ou restart
+O sistema usa SQLite para armazenamento de dados, adaptado para funcionar no Heroku:
 
-## Solução Temporária Implementada
+### Em Desenvolvimento (Local)
+- Banco SQLite em: `./database/fingerprints.db`
+- Logs JSON em: `./data/fingerprints.log`
+- Dados persistem permanentemente
 
-O sistema agora usa `/tmp/fingerprints.db` no Heroku, que permite:
-- ✅ Coletar fingerprints enquanto o dyno está ativo
-- ✅ Consultar dados durante a sessão
-- ❌ Mas os dados são perdidos quando o dyno reinicia (aproximadamente a cada 24h)
+### Em Produção (Heroku)
+- Banco SQLite em: `/tmp/fingerprints.db`
+- Logs JSON em: `/tmp/data/fingerprints.log`
+- **Dados são temporários** (reiniciam com o dyno ~24h)
 
-## Para Testar se está Funcionando
+## Características do Sistema
 
-1. Acesse o site e faça uma coleta:
-   ```
-   https://wasm-fingerprint-78aae8be269e.herokuapp.com/
-   ```
+✅ **Funcionalidades Ativas:**
+- Coleta de fingerprints funciona normalmente
+- Dashboard admin com estatísticas em tempo real
+- Download do banco de dados SQLite
+- Consultas SQL pelo admin
+- Logs em JSON como backup
 
-2. Verifique as estatísticas no admin:
-   ```
-   https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730
-   ```
+⚠️ **Limitação do Heroku:**
+- Os dados são mantidos apenas enquanto o dyno está ativo
+- Após restart/deploy, o banco é recriado vazio
+- Ideal para testes e demonstrações
 
-3. Se houver dados, baixe imediatamente:
-   ```bash
-   curl "https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin/database/download?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730" -o fingerprints_temp.db
-   ```
+## Como Usar
 
-## Solução Permanente Recomendada
+### 1. Coletar Fingerprints
+```
+https://wasm-fingerprint-78aae8be269e.herokuapp.com/
+```
 
-### Opção 1: PostgreSQL (Grátis no Heroku)
+### 2. Acessar Admin Dashboard
+```
+https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730
+```
 
-1. Adicionar PostgreSQL ao Heroku:
-   ```bash
-   heroku addons:create heroku-postgresql:mini --app wasm-fingerprint
-   ```
+### 3. Baixar Banco de Dados
+```bash
+# Download direto
+curl "https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin/database/download?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730" -o fingerprints.db
 
-2. Modificar o código para usar PostgreSQL quando disponível
+# Ou com autenticação
+curl -u admin:SecureAdmin2025Prod https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin/database/download -o fingerprints.db
+```
 
-### Opção 2: Serviço Externo de Banco de Dados
+### 4. Analisar Dados Localmente
+```bash
+# Abrir com SQLite
+sqlite3 fingerprints.db
 
-- **Supabase**: PostgreSQL grátis até 500MB
-- **PlanetScale**: MySQL serverless grátis
-- **Turso**: SQLite na nuvem grátis até 500MB
+# Consultas úteis
+.tables
+SELECT COUNT(*) FROM fingerprints;
+SELECT * FROM fingerprints ORDER BY server_timestamp DESC LIMIT 5;
+```
 
-### Opção 3: Armazenamento em Arquivo Externo
+## Backup dos Dados
 
-- **AWS S3**: Para backups periódicos
-- **Google Cloud Storage**: Alternativa ao S3
-- **Cloudflare R2**: Storage compatível com S3
+Como os dados são temporários no Heroku, faça backups regulares:
 
-## Status Atual
+```bash
+# Script de backup automático (executar localmente)
+#!/bin/bash
+while true; do
+    timestamp=$(date +%Y%m%d_%H%M%S)
+    curl -s "https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin/database/download?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730" \
+         -o "backup_${timestamp}.db"
+    echo "Backup salvo: backup_${timestamp}.db"
+    sleep 3600 # Aguarda 1 hora
+done
+```
 
-⚠️ **IMPORTANTE**: Os dados coletados atualmente são temporários e serão perdidos quando o dyno reiniciar. Para não perder dados importantes:
-
-1. Baixe o banco regularmente (a cada hora se possível)
-2. Configure um banco de dados persistente o quanto antes
-3. Considere implementar backup automático
-
-## Comandos Úteis
+## Monitoramento
 
 ```bash
 # Ver logs em tempo real
 heroku logs --tail --app wasm-fingerprint
 
 # Verificar se o banco existe
-heroku run "ls -la /tmp/*.db" --app wasm-fingerprint
+heroku run "ls -la /tmp/*.db /tmp/data/*.log" --app wasm-fingerprint
 
-# Fazer backup manual
-curl "https://wasm-fingerprint-78aae8be269e.herokuapp.com/admin/database/download?token=a6472f239769e3c11e8552b19de3398d8992ae82ce69e8d0314299b9e013a730" -o backup_$(date +%Y%m%d_%H%M%S).db
+# Status do sistema
+curl https://wasm-fingerprint-78aae8be269e.herokuapp.com/health
 ```
+
+## Por que SQLite?
+
+Este é um **sistema experimental e de estudo**, onde:
+- Simplicidade é prioridade
+- SQLite é perfeito para prototipagem
+- Não requer configuração de banco externo
+- Facilita análise local dos dados
+- Mantém o foco no estudo de fingerprinting
+
+## Nota sobre Persistência
+
+Para um sistema de produção real, considere:
+- Executar localmente para persistência permanente
+- Usar VPS próprio com volume persistente
+- Implementar export/import automático dos dados
+
+Este setup atual é ideal para:
+- Demonstrações
+- Testes de fingerprinting
+- Coleta temporária de dados
+- Estudos e experimentos
