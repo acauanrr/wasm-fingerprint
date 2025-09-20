@@ -540,6 +540,44 @@ app.post('/admin/database/query', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Admin endpoint to reset database and logs
+app.post('/admin/database/reset', authenticateAdmin, async (req, res) => {
+    try {
+        console.log('Admin requested database reset');
+
+        // Reset database using the reset method
+        await database.reset();
+        console.log('Database tables cleared successfully');
+
+        // Delete log file
+        if (fsSync.existsSync(LOG_FILE)) {
+            fsSync.unlinkSync(LOG_FILE);
+            console.log('Log file deleted:', LOG_FILE);
+        }
+
+        // Recreate log file
+        fsSync.writeFileSync(LOG_FILE, '');
+        console.log('New log file created');
+
+        res.json({
+            success: true,
+            message: 'Database and logs have been reset successfully',
+            timestamp: new Date().toISOString(),
+            details: {
+                database: 'All tables cleared',
+                logs: 'Log file reset',
+                path: dbPath
+            }
+        });
+    } catch (error) {
+        console.error('Error resetting database:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to reset database: ' + error.message
+        });
+    }
+});
+
 // Admin endpoint to get log file
 app.get('/admin/logs/download', authenticateAdmin, async (req, res) => {
     try {
@@ -731,6 +769,18 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                     <button onclick="viewRecords()" class="btn">View Records</button>
                 </div>
             </div>
+
+            <div class="card">
+                <h2>⚠️ Database Management</h2>
+                <div class="actions">
+                    <button onclick="resetDatabase()" class="btn" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
+                        🗑️ Reset Database and Logs
+                    </button>
+                </div>
+                <div style="margin-top: 10px; font-size: 12px; color: #999;">
+                    This will permanently delete all collected fingerprints and logs.
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -840,6 +890,48 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                 }
             } catch (error) {
                 resultsDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+
+        async function resetDatabase() {
+            const confirmMessage = \`⚠️ WARNING: Database Reset\n\nThis action will permanently delete:\n• All collected fingerprints\n• All session data\n• All log files\n\nAre you absolutely sure you want to reset the database?\n\nType 'RESET' to confirm:\`;
+
+            const userInput = prompt(confirmMessage);
+
+            if (userInput !== 'RESET') {
+                alert('Reset cancelled. Database was not modified.');
+                return;
+            }
+
+            const secondConfirm = confirm('Final confirmation: Reset database and delete all data?');
+
+            if (!secondConfirm) {
+                alert('Reset cancelled. Database was not modified.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/database/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('✅ Database reset successfully!\n\nAll data has been cleared.');
+                    // Reload stats
+                    loadStats();
+                    // Clear any displayed records
+                    document.getElementById('records').innerHTML = '<div class="loading">No records - database is empty</div>';
+                    document.getElementById('queryResults').innerHTML = '';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                alert('❌ Error resetting database: ' + error.message);
             }
         }
 

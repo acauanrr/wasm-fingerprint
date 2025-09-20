@@ -467,6 +467,55 @@ class FingerprintDatabase {
             });
         });
     }
+
+    // Reset database - delete all data and reinitialize
+    async reset() {
+        await this.initialize();
+
+        return new Promise((resolve, reject) => {
+            this.db.serialize(() => {
+                // Delete all data from all tables
+                const tables = [
+                    'sessions',
+                    'hardware_benchmarks',
+                    'audio_fingerprints',
+                    'webgl_fingerprints',
+                    'canvas_fingerprints',
+                    'browser_info',
+                    'fingerprints'
+                ];
+
+                let completed = 0;
+                tables.forEach(table => {
+                    this.db.run(`DELETE FROM ${table}`, (err) => {
+                        if (err) {
+                            console.error(`Error clearing table ${table}:`, err);
+                        }
+                        completed++;
+                        if (completed === tables.length) {
+                            // Reset SQLite sequence counters
+                            this.db.run("DELETE FROM sqlite_sequence", (err) => {
+                                if (err) {
+                                    console.error('Error resetting sequences:', err);
+                                }
+                                console.log('Database reset completed');
+                                resolve();
+                            });
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    // Close database connection
+    close() {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+            this.initPromise = null;
+        }
+    }
 }
 
 module.exports = FingerprintDatabase;
