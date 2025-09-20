@@ -1,6 +1,19 @@
 # Advanced Browser Fingerprinting with WebAssembly
 
+[![System Architecture](https://img.shields.io/badge/System%20Architecture-View%20Diagrams-blue?style=for-the-badge&logo=github)](.context/system-architecture.md)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Heroku-430098?style=for-the-badge&logo=heroku)](https://wasm-fingerprint-78aae8be269e.herokuapp.com/)
+[![Documentation](https://img.shields.io/badge/Docs-Complete-green?style=for-the-badge&logo=markdown)](.context/system-architecture.md)
+
 Uma implementação avançada de browser fingerprinting usando WebAssembly com persistência SQLite robusta, baseada em pesquisa acadêmica sobre técnicas de rastreamento stateless e identificação de dispositivos através de microbenchmarks de hardware.
+
+## 📚 Documentação
+
+| Documento | Descrição |
+|-----------|-----------|
+| 📖 [README.md](README.md) | Documentação principal e guia de uso |
+| 🏗️ [System Architecture](.context/system-architecture.md) | Arquitetura completa com diagramas Mermaid |
+| 🌐 [Live Demo](https://wasm-fingerprint-78aae8be269e.herokuapp.com/) | Aplicação em produção |
+| 📊 [API Documentation](#endpoints-da-api) | Endpoints e exemplos de uso |
 
 ## 📋 Visão Geral
 

@@ -1,5 +1,19 @@
 # Sistema de Browser Fingerprinting - Arquitetura e Pipeline
 
+[← Voltar ao README principal](../README.md) | [🌐 Live Demo](https://wasm-fingerprint-78aae8be269e.herokuapp.com/)
+
+Este documento apresenta a arquitetura completa do sistema de browser fingerprinting com diagramas detalhados em Mermaid, incluindo fluxo de dados, pipeline de deployment e correções implementadas.
+
+## Índice
+
+- [Arquitetura Completa](#diagrama-da-arquitetura-completa)
+- [Pipeline de Coleta](#pipeline-de-coleta-de-fingerprint)
+- [Fluxo de Dados](#fluxo-de-dados-detalhado)
+- [Estrutura de Dados](#estrutura-de-dados-do-fingerprint)
+- [Sistema de Comparação](#sistema-de-comparação-inteligente)
+- [Deployment e DevOps](#deployment-e-devops)
+- [Correções Implementadas](#correções-e-melhorias-recentes)
+
 ## Diagrama da Arquitetura Completa
 
 ```mermaid
