@@ -813,23 +813,23 @@ app.get('/admin', authenticateAdmin, (req, res) => {
                 document.getElementById('stats').innerHTML = `
                     <div class="stat">
                         <span class="stat-label">Total Sessions</span>
-                        <span class="stat-value">\${stats.totalSessions || 0}</span>
+                        <span class="stat-value">${stats.totalSessions || 0}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Unique Fingerprints</span>
-                        <span class="stat-value">\${stats.uniqueFingerprints || 0}</span>
+                        <span class="stat-value">${stats.uniqueFingerprints || 0}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Total Fingerprints</span>
-                        <span class="stat-value">\${stats.totalFingerprints || 0}</span>
+                        <span class="stat-value">${stats.totalFingerprints || 0}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Average Sessions</span>
-                        <span class="stat-value">\${stats.averageSessionsPerFingerprint?.toFixed(2) || 0}</span>
+                        <span class="stat-value">${stats.averageSessionsPerFingerprint?.toFixed(2) || 0}</span>
                     </div>
                     <div class="stat">
                         <span class="stat-label">Returning Users</span>
-                        <span class="stat-value">\${stats.returningUsers || 0}</span>
+                        <span class="stat-value">${stats.returningUsers || 0}</span>
                     </div>
                 `;
             } catch (error) {
