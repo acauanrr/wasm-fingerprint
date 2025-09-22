@@ -7,6 +7,7 @@ const router = express.Router();
 // Login routes (no auth required)
 router.get('/login', adminController.renderLogin);
 router.post('/verify', adminController.verifyLogin);
+router.post('/logout', adminController.logout);
 
 // Protected routes
 router.get('/', adminController.redirectToLogin);

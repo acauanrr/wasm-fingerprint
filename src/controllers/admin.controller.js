@@ -52,6 +52,25 @@ const redirectToLogin = (req, res) => {
     res.redirect('/admin/login');
 };
 
+const logout = (req, res) => {
+    // Get session token from cookie
+    const sessionToken = req.cookies?.adminSession;
+
+    // Delete session from memory if exists
+    if (sessionToken) {
+        sessionService.deleteSession(sessionToken);
+    }
+
+    // Clear cookie
+    res.clearCookie('adminSession');
+
+    // Send success response
+    res.json({
+        success: true,
+        message: 'Logout successful'
+    });
+};
+
 const renderDashboard = (req, res) => {
     const html = adminView.renderDashboard(ADMIN_TOKEN);
     res.send(html);
@@ -128,6 +147,7 @@ module.exports = {
     renderLogin,
     verifyLogin,
     redirectToLogin,
+    logout,
     renderDashboard,
     resetLogs,
     downloadLogs,

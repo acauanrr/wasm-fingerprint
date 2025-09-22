@@ -130,9 +130,14 @@ const renderDashboard = (adminToken) => {
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔐 Admin Dashboard</h1>
-            <div class="subtitle">Fingerprint System Management (JSON Log Based)</div>
+        <div class="header" style="position: relative;">
+            <div>
+                <h1>🔐 Admin Dashboard</h1>
+                <div class="subtitle">Fingerprint System Management (JSON Log Based)</div>
+            </div>
+            <button onclick="handleLogout()" class="btn-logout" style="position: absolute; top: 30px; right: 30px; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s, box-shadow 0.2s;">
+                🚪 Logout
+            </button>
         </div>
 
         <div class="grid">
@@ -265,6 +270,44 @@ const renderDashboard = (adminToken) => {
                 alert('❌ Error resetting logs: ' + error.message);
             }
         }
+
+        // Logout function
+        async function handleLogout() {
+            if (!confirm('Tem certeza que deseja sair?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/admin/logout', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    // Clear session storage
+                    sessionStorage.removeItem('adminAuth');
+                    sessionStorage.removeItem('adminToken');
+
+                    // Redirect to login
+                    window.location.href = '/admin/login';
+                } else {
+                    alert('Erro ao fazer logout. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Erro ao fazer logout. Tente novamente.');
+            }
+        }
+
+        // Add hover effect for logout button
+        const style = document.createElement('style');
+        style.textContent = \`
+            .btn-logout:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+            }
+        \`;
+        document.head.appendChild(style);
 
         // Load stats on page load
         loadStats();
