@@ -589,7 +589,7 @@ export function log_window_details() {
     wasm.log_window_details();
 }
 
-function __wbg_adapter_8(arg0, arg1, arg2) {
+function __wbg_adapter_4(arg0, arg1, arg2) {
     wasm.__wbindgen_export_5(arg0, arg1, addHeapObject(arg2));
 }
 
@@ -1411,7 +1411,7 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_cast_e7ad0d7b317830d5 = function(arg0, arg1) {
         // Cast intrinsic for `Closure(Closure { dtor_idx: 56, function: Function { arguments: [Externref], shim_idx: 57, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 56, __wbg_adapter_8);
+        const ret = makeMutClosure(arg0, arg1, 56, __wbg_adapter_4);
         return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_object_clone_ref = function(arg0) {
