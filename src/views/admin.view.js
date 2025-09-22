@@ -162,6 +162,8 @@ const renderDashboard = (adminToken) => {
     </div>
 
     <script>
+        // Get auth from sessionStorage
+        const adminAuth = sessionStorage.getItem('adminAuth');
         const token = '${adminToken}';
 
         async function loadStats() {
@@ -199,7 +201,11 @@ const renderDashboard = (adminToken) => {
         async function viewLogs() {
             document.getElementById('logsCard').style.display = 'block';
             try {
-                const response = await fetch('/admin/logs/view?token=' + token + '&limit=20');
+                const headers = {};
+                if (adminAuth) {
+                    headers['Authorization'] = 'Basic ' + adminAuth;
+                }
+                const response = await fetch('/admin/logs/view?limit=20', { headers });
                 const data = await response.json();
 
                 if (data.success) {
@@ -237,11 +243,13 @@ const renderDashboard = (adminToken) => {
             }
 
             try {
+                const headers = {};
+                if (adminAuth) {
+                    headers['Authorization'] = 'Basic ' + adminAuth;
+                }
                 const response = await fetch('/admin/reset', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer ' + token
-                    }
+                    headers
                 });
 
                 const data = await response.json();

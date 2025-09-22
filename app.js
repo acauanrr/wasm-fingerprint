@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const config = require('./config');
 const routes = require('./src/routes');
 const { securityHeaders, createRateLimiter } = require('./src/middleware/security.middleware');
@@ -10,6 +11,7 @@ const PORT = config.server.port;
 
 app.use(securityHeaders);
 
+app.use(cookieParser());
 app.use(cors(config.security.cors));
 app.use(bodyParser.json({ limit: '10mb' }));
 
