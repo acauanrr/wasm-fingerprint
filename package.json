@@ -1,13 +1,13 @@
 {
   "name": "wasm-finger",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "build:wasm": "cd wasm-fingerprint && export PATH=\"$HOME/.cargo/bin:$PATH\" && wasm-pack build --target web --out-dir ../public/pkg --no-opt",
     "build:wasm:heroku": "echo 'Skipping WASM build on Heroku - using pre-built files'",
     "build": "npm run build:wasm",
     "heroku-postbuild": "npm run build:wasm:heroku",
-    "start": "node server.js",
+    "start": "node app.js",
     "dev": "npm run build && npm start",
     "clean": "rm -rf public/pkg data/fingerprints.log",
     "prebuild": "mkdir -p public/pkg",
